@@ -11,18 +11,23 @@ In the future, there will be standard functions implemented to use this data for
 ## Installation
 
 tes3conv is required for providing input to the script: https://github.com/Greatness7/tes3conv
+
 Installation instructions for the script: https://github.com/tes3mp-scripts/Tutorials
+
 dataFilesLoaderMain.lua should be required in customScripts.lua
 
 Once the script is installed, use tes3conv to produce a JSON file of each plugin used by your server and place these files in data/custom/DFL_input. They should be named the same as the equivalent ESM or ESP file.
 
 The script can be configured by modifying dataFilesLoader.config in dataFilesLoaderMain.lua. There are currently two settings that can be changed:
+
 parseOnServerStart - If this is set to true, the function to generate the output JSON files will be run on each server start. Otherwise it must be run manually by another script.
+
 recordTypesToRead - This is a list of record types for which to generate output JSON files. Not all record types can currently be included, but the majority will be handled properly.
 
 ## Contributors
 
 Written primarily by Vidi_Aquam
+
 These scripts use the lua_string library by stein197 found here and included in this repo: https://github.com/stein197/lua-string
 
 ## License
