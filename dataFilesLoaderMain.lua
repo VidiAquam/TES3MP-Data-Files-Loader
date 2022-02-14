@@ -3,6 +3,7 @@ dataFilesLoader = {
 }
 
 require("custom/DFL/dependencies/lua_string")
+require("dataFilesLoaderUtilities")
 
 dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
@@ -24,13 +25,12 @@ dataFilesLoader.init = function()
             end
         end
     end
-    --tes3mp.LogMessage(enumerations.log.WARN, "[DFL] " .. tableHelper.concatenateArrayValues(jsonDataFileList))
     dataFilesLoader.generateParsedFiles(jsonDataFileList)
 end
 
 
 dataFilesLoader.generateParsedFiles = function(fileList)
-    local hasExistingGeneratedFiles = tes3mp.DoesFileExist("custom/DFL_output/DFL_Cell.json")
+    local hasExistingGeneratedFiles = tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Cell.json")
     if hasExistingGeneratedFiles then
         dataFilesLoader.oldCells = jsonInterface.load("custom/DFL_output/DFL_Cell.json") -- Used to update cell refs to new refnums
     end
@@ -55,34 +55,27 @@ dataFilesLoader.generateParsedFiles = function(fileList)
 
         tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_" .. recordType .. ".json")
         jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
-        dataFilesLoader.data[recordType] = {}
     end
 
     tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Generation of DFL files complete")
 
     if hasExistingGeneratedFiles then
-        for _, cell in dataFilesLoader.oldCells do
-            dataFilesLoader.updateCellRefs(cell.id, dataFilesLoader.oldCells, dataFilesLoader.data.Cell)
+        for cellDescription, cell in pairs(dataFilesLoader.oldCells) do
+            dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data)
         end
     end
 end
 
 dataFilesLoader.parseCellEntry = function(entry)
     local isUnnamed = entry.id == ""
-    
-    if isUnnamed then
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading unnamed Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
-    else
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading Cell record " .. entry.id)
-    end
 
     if dataFilesLoader.data.Cell == nil then dataFilesLoader.data.Cell = {} end
 
     if isUnnamed == false then
-        
+        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading Cell record " .. entry.id)
+
         if dataFilesLoader.data.Cell[entry.id] == nil then dataFilesLoader.data.Cell[entry.id] = {} end
         local cellRecord = dataFilesLoader.data.Cell[entry.id]
-
         cellRecord.data = entry.data
         cellRecord.water_height = entry.water_height
         cellRecord.atmosphere_data = entry.atmosphere_data
@@ -96,9 +89,10 @@ dataFilesLoader.parseCellEntry = function(entry)
             ref.refr_index = nil
         end
     else
-        dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
-        cellRecord = dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
+        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
 
+        dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
+        local cellRecord = dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
         cellRecord.data = entry.data
         cellRecord.region = entry.region
 
@@ -108,8 +102,6 @@ dataFilesLoader.parseCellEntry = function(entry)
             local ref = cellRecord.references[reference.refr_index]
             ref.refr_index = nil
         end
-
-        
     end
 end
 
@@ -125,7 +117,7 @@ dataFilesLoader.parseEntry = function(entry)
         if recordTable[entry.id] == nil then recordTable[entry.id] = {} end
 
         recordTable[entry.id] = entry
-        newEntry = recordTable[entry.id]
+        local newEntry = recordTable[entry.id]
         newEntry.id = nil
         newEntry.type = nil
         newEntry.flags = nil
@@ -140,11 +132,6 @@ dataFilesLoader.parseEntry = function(entry)
         recordTable[#dataFilesLoader.data.entryType].flags = nil
     end
 end   
-
-
-dataFilesLoader.updateCellRefs = function(cellDescription, oldCellTable, newCellTable) 
-    
-end
 
 if dataFilesLoader.config.parseOnServerStart == true then
     customEventHooks.registerHandler("OnServerPostInit", dataFilesLoader.init)
