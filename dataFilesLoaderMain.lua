@@ -30,9 +30,9 @@ end
 
 
 dataFilesLoader.generateParsedFiles = function(fileList)
-    local hasExistingGeneratedFiles = tes3mp.DoesFileExist("custom/DFL_output/DFL_Cell.json")
+    local hasExistingGeneratedFiles = tes3mp.DoesFileExist("custom/DFL_output/DFL_Interior.json")
     if hasExistingGeneratedFiles then
-        dataFilesLoader.oldCells = jsonInterface.load("custom/DFL_output/DFL_Cell.json") -- Used to update cell refs to new refnums
+        dataFilesLoader.oldCells = jsonInterface.load("custom/DFL_output/DFL_Interior.json") -- Used to update cell refs to new refnums
     end
 
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
@@ -54,7 +54,12 @@ dataFilesLoader.generateParsedFiles = function(fileList)
         end
 
         tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_" .. recordType .. ".json")
-        jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
+        if entry.type == "Cell" then
+            jsonInterface.quicksave("custom/DFL_output/DFL_Exterior.json", dataFilesLoader.data["Exterior"])
+            jsonInterface.quicksave("custom/DFL_output/DFL_Interior.json", dataFilesLoader.data["Interior"])
+        else
+            jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
+        end
         dataFilesLoader.data[recordType] = {}
     end
 
@@ -68,49 +73,40 @@ dataFilesLoader.generateParsedFiles = function(fileList)
 end
 
 dataFilesLoader.parseCellEntry = function(entry)
-    local isUnnamed = entry.id == ""
-    
-    if isUnnamed then
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading unnamed Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
-    else
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading Cell record " .. entry.id)
-    end
+    local isExterior = (entry.data.flags % 2) == 0
 
-    if dataFilesLoader.data.Cell == nil then dataFilesLoader.data.Cell = {} end
+    if dataFilesLoader.data.Interior == nil then dataFilesLoader.data.Interior = {} end
+    if dataFilesLoader.data.Exterior == nil then dataFilesLoader.data.Exterior = {} end
 
-    if isUnnamed == false then
-        
-        if dataFilesLoader.data.Cell[entry.id] == nil then dataFilesLoader.data.Cell[entry.id] = {} end
-        local cellRecord = dataFilesLoader.data.Cell[entry.id]
+    if isExterior == false then
+        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading interior Cell record " .. entry.id)
+        if dataFilesLoader.data.Interior[entry.id] == nil then dataFilesLoader.data.Interior[entry.id] = {} end
+        local cellRecord = dataFilesLoader.data.Interior[entry.id]
 
         cellRecord.data = entry.data
         cellRecord.water_height = entry.water_height
         cellRecord.atmosphere_data = entry.atmosphere_data
         cellRecord.region = entry.region 
-        
-
-        if cellRecord.references == nil then cellRecord.references = {} end
-        for _, reference in ipairs(entry.references) do
-            cellRecord.references[reference.refr_index] = reference 
-            local ref = cellRecord.references[reference.refr_index]
-            ref.refr_index = nil
-        end
+        cellRecord.id = entry.id
     else
-        dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
-        cellRecord = dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
+        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
+        dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
+        cellRecord = dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
 
         cellRecord.data = entry.data
         cellRecord.region = entry.region
+        cellRecord.id = entry.id
+    end
 
-        if cellRecord.references == nil then cellRecord.references = {} end
-        for _, reference in ipairs(entry.references) do
-            cellRecord.references[reference.refr_index] = reference 
-            local ref = cellRecord.references[reference.refr_index]
-            ref.refr_index = nil
-        end
+    if cellRecord.references == nil then cellRecord.references = {} end
+    for _, reference in ipairs(entry.references) do
+        cellRecord.references[reference.refr_index] = reference 
+        local ref = cellRecord.references[reference.refr_index]
+        ref.refr_index = nil
+    end
 
         
-    end
+    
 end
 
 dataFilesLoader.parseEntry = function(entry)
@@ -130,14 +126,25 @@ dataFilesLoader.parseEntry = function(entry)
         newEntry.type = nil
         newEntry.flags = nil
     else
-        -- I'm not sure what record types lack ids, but this is here for safety
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record ")
-        table.insert(dataFilesLoader.data[entryType], entry)
+        if entry.type == "PathGrid" then
+            local recordTable = dataFilesLoader.data[entryType]
+            if recordTable[entry.cell] == nil then recordTable[entry.cell] = {} end
 
-        local recordTable = dataFilesLoader.data[entryType]
+            recordTable[entry.cell] = entry
+            newEntry = recordTable[entry.cell]
+            newEntry.cell = nil
+            newEntry.type = nil
+            newEntry.flags = nil
+        else
+            -- I'm not sure what other record types lack ids, but this is here for safety
+            tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record ")
+            table.insert(dataFilesLoader.data[entryType], entry)
 
-        recordTable[#dataFilesLoader.data.entryType].type = nil
-        recordTable[#dataFilesLoader.data.entryType].flags = nil
+            local recordTable = dataFilesLoader.data[entryType]
+
+            recordTable[#dataFilesLoader.data.entryType].type = nil
+            recordTable[#dataFilesLoader.data.entryType].flags = nil
+        end
     end
 end   
 
