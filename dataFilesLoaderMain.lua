@@ -30,9 +30,9 @@ end
 
 
 dataFilesLoader.generateParsedFiles = function(fileList)
-    local hasExistingGeneratedFiles = tes3mp.DoesFileExist("custom/DFL_output/DFL_Interior.json")
+    local hasExistingGeneratedFiles = tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Interior.json") and tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Exterior.json")
     if hasExistingGeneratedFiles then
-        dataFilesLoader.oldCells = jsonInterface.load("custom/DFL_output/DFL_Interior.json") -- Used to update cell refs to new refnums
+        dataFilesLoader.oldCells = tableHelper.merge(jsonInterface.load("custom/DFL_output/DFL_Interior.json"), jsonInterface.load("custom/DFL_output/DFL_Exterior.json"), true)-- Used to update cell refs to new refnums
     end
 
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
@@ -59,15 +59,21 @@ dataFilesLoader.generateParsedFiles = function(fileList)
             jsonInterface.quicksave("custom/DFL_output/DFL_Interior.json", dataFilesLoader.data["Interior"])
         else
             jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
+            dataFilesLoader.data[recordType] = {}
         end
-        dataFilesLoader.data[recordType] = {}
+        
     end
 
     tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Generation of DFL files complete")
 
     if hasExistingGeneratedFiles then
         for cellDescription, cell in pairs(dataFilesLoader.oldCells) do
-            dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data)
+            local isExterior = (cell.data.flags % 2) == 0
+            if isExterior then
+                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
+            else
+                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Interior[cellDescription])
+            end
         end
     end
 end
@@ -93,8 +99,6 @@ dataFilesLoader.parseCellEntry = function(entry)
         dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
         cellRecord = dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
 
-        dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
-        local cellRecord = dataFilesLoader.data.Cell[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
         cellRecord.data = entry.data
         cellRecord.region = entry.region
         cellRecord.id = entry.id
@@ -106,9 +110,6 @@ dataFilesLoader.parseCellEntry = function(entry)
         local ref = cellRecord.references[reference.refr_index]
         ref.refr_index = nil
     end
-
-        
-    
 end
 
 dataFilesLoader.parseEntry = function(entry)
@@ -133,7 +134,7 @@ dataFilesLoader.parseEntry = function(entry)
             if recordTable[entry.cell] == nil then recordTable[entry.cell] = {} end
 
             recordTable[entry.cell] = entry
-            newEntry = recordTable[entry.cell]
+            local newEntry = recordTable[entry.cell]
             newEntry.cell = nil
             newEntry.type = nil
             newEntry.flags = nil
