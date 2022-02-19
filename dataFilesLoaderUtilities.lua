@@ -28,13 +28,15 @@ end
 dataFilesLoader.getItemRecord = function(id) 
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
-        return dataFilesLoader.getRecord(id, recordType)
+        if dataFilesLoader.getRecord(id, recordType) ~= nil then
+            return dataFilesLoader.getRecord(id, recordType)
+        end
     end
 end
 
 dataFilesLoader.getRecord = function(id, recordType)
     if recordType ~= "Cell" then
-        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType].id end
+        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType].id else return nil end
     else
         return dataFilesLoader.getCellRecord(id)
     end
