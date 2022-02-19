@@ -27,17 +27,23 @@ dataFilesLoader.init = function()
         end
     end
     dataFilesLoader.generateParsedFiles(jsonDataFileList)
-    collectgarbage()
     dataFilesLoader.loadParsedFiles()
 end
 
 dataFilesLoader.loadParsedFiles = function()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
        if recordType ~= "Cell" then
-            dataFilesLoader.data[recordType] = jsonInterface.load("custom/DFL_output/DFL_" .. recordType .. ".json")
+            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_" .. recordType .. ".json")
+            dataFilesLoader.data[recordType] = jsonInterface.load("custom/DFL_output/DFL_" .. recordType .. ".json")  
        else
-            dataFilesLoader.data.Interior = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
-            dataFilesLoader.data.Exterior = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
+            if dataFilesLoader.data.Interior == nil then
+                dataFilesLoader.data.Interior = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
+                tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_Interior.json")
+            end
+            if dataFilesLoader.data.Exterior == nil then
+                dataFilesLoader.data.Exterior = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
+                tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_Exterior.json")
+            end 
        end 
     end
 end
@@ -55,10 +61,12 @@ dataFilesLoader.generateParsedFiles = function(fileList)
     end
 
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
+        tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading record type" .. recordType)
         for _, file in ipairs(fileList) do
-            if tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_input/" .. file) then
-                tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading file " .. file)
-                for _, entry in ipairs(jsonInterface.load("custom/DFL_input/" .. file)) do
+            local ciFilename = tes3mp.GetCaseInsensitiveFilename(config.dataPath .. "/custom/DFL_input", file)
+            if tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_input/" .. ciFilename) then
+                --tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading file " .. ciFilename)
+                for _, entry in ipairs(jsonInterface.load("custom/DFL_input/" .. ciFilename)) do
                     if entry.type == recordType then
                         if entry.type == "Cell" then -- Cells handled differently due to the need to merge them rather than overwrite
                             dataFilesLoader.parseCellEntry(entry) 
@@ -91,15 +99,17 @@ dataFilesLoader.generateParsedFiles = function(fileList)
 
     if hasExistingGeneratedFiles then
         for cellDescription, cell in pairs(dataFilesLoader.oldInteriorCells) do
-            if cell ~= dataFilesLoader.data.Interior[cellDescription] then 
+            if dataFilesLoader.oldInteriorCells[cellDescription] ~= dataFilesLoader.data.Interior[cellDescription] then 
                 dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Interior[cellDescription])
             end
         end
         for cellDescription, cell in pairs(dataFilesLoader.oldExteriorCells) do
-            if cell ~= dataFilesLoader.data.Exterior[cellDescription] then 
+            if dataFilesLoader.oldExteriorCells[cellDescription] ~= dataFilesLoader.data.Exterior[cellDescription] then 
                 dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
             end
         end
+        dataFilesLoader.oldInteriorCells = nil
+        dataFilesLoader.oldExteriorCells = nil
     end
 end
 
@@ -110,7 +120,7 @@ dataFilesLoader.parseCellEntry = function(entry)
     if dataFilesLoader.data.Exterior == nil then dataFilesLoader.data.Exterior = {} end
 
     if isExterior == false then
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading interior Cell record " .. entry.id)
+        --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading interior Cell record " .. entry.id)
         if dataFilesLoader.data.Interior[entry.id] == nil then dataFilesLoader.data.Interior[entry.id] = {} end
         local cellRecord = dataFilesLoader.data.Interior[entry.id]
 
@@ -127,7 +137,7 @@ dataFilesLoader.parseCellEntry = function(entry)
             ref.refr_index = nil
         end
     else
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
+        --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
         dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
         cellRecord = dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
 
@@ -149,7 +159,7 @@ dataFilesLoader.parseEntry = function(entry)
     if dataFilesLoader.data[entryType] == nil then dataFilesLoader.data[entryType] = {} end
 
     if entry.id ~= nil then 
-        tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record " .. entry.id)
+        --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record " .. entry.id)
 
         local recordTable = dataFilesLoader.data[entryType]
 
@@ -172,7 +182,7 @@ dataFilesLoader.parseEntry = function(entry)
             newEntry.flags = nil
         else
             -- I'm not sure what other record types lack ids, but this is here for safety
-            tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record ")
+            --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record ")
             table.insert(dataFilesLoader.data[entryType], entry)
 
             local recordTable = dataFilesLoader.data[entryType]
