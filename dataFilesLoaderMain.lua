@@ -3,14 +3,15 @@ dataFilesLoader = {
 }
 
 require("custom/DFL/dependencies/lua_string")
-require("dataFilesLoaderUtilities")
+require("custom/DFL/dataFilesLoaderUtilities")
 
 dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
-    -- If false, dataFilesLoader.init() will need to be called manually when changes to the data files are made
+    -- Very slow with many mods, especially ones editing cells
+    -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = false, 
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Static", "Armor", "Weapon", "Clothing", "Cell"}
+    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region"},
 }
 
 dataFilesLoader.init = function() 
@@ -18,21 +19,39 @@ dataFilesLoader.init = function()
 
     for listIndex, pluginEntry in ipairs(jsonDataFileList) do
         for entryIndex, checksumStringArray in pairs(pluginEntry) do
-            if entryIndex:endswith("esm") then
-                jsonDataFileList[listIndex] = entryIndex:trimend("esm") .. "json"
+            if string.lower(entryIndex):endswith("esm") then
+                jsonDataFileList[listIndex] = string.lower(entryIndex):trimend("esm") .. "json"
             else
-                jsonDataFileList[listIndex] = entryIndex:trimend("esp") .. "json"
+                jsonDataFileList[listIndex] = string.lower(entryIndex):trimend("esp") .. "json"
             end
         end
     end
     dataFilesLoader.generateParsedFiles(jsonDataFileList)
+    collectgarbage()
+    dataFilesLoader.loadParsedFiles()
 end
 
+dataFilesLoader.loadParsedFiles = function()
+    for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
+       if recordType ~= "Cell" then
+            dataFilesLoader.data[recordType] = jsonInterface.load("custom/DFL_output/DFL_" .. recordType .. ".json")
+       else
+            dataFilesLoader.data.Interior = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
+            dataFilesLoader.data.Exterior = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
+       end 
+    end
+end
 
 dataFilesLoader.generateParsedFiles = function(fileList)
+    if tableHelper.containsValue(dataFilesLoader.config.recordTypesToRead, "Cell", false) then
+        table.remove(dataFilesLoader.config.recordTypesToRead,tableHelper.getIndexByValue(dataFilesLoader.config.recordTypesToRead, "Cell"))
+        table.insert(dataFilesLoader.config.recordTypesToRead, "Cell")
+    end
+
     local hasExistingGeneratedFiles = tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Interior.json") and tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Exterior.json")
-    if hasExistingGeneratedFiles then
-        dataFilesLoader.oldCells = tableHelper.merge(jsonInterface.load("custom/DFL_output/DFL_Interior.json"), jsonInterface.load("custom/DFL_output/DFL_Exterior.json"), true)-- Used to update cell refs to new refnums
+    if hasExistingGeneratedFiles then -- Used to update cell refs to new refnums
+        dataFilesLoader.oldInteriorCells = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
+        dataFilesLoader.oldExteriorCells = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
     end
 
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
@@ -46,18 +65,22 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                         else
                             dataFilesLoader.parseEntry(entry)
                         end
-                    end
+                    end 
                 end
+                collectgarbage()
             else
                 tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Could not find file \"" .. file .. "\" in folder data/custom/DFL_input")
             end
         end
 
-        tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_" .. recordType .. ".json")
+        
         if recordType == "Cell" then
             jsonInterface.quicksave("custom/DFL_output/DFL_Exterior.json", dataFilesLoader.data["Exterior"])
+            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Exterior.json")
             jsonInterface.quicksave("custom/DFL_output/DFL_Interior.json", dataFilesLoader.data["Interior"])
+            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Interior.json")
         else
+            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_" .. recordType .. ".json")
             jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
             dataFilesLoader.data[recordType] = {}
         end
@@ -67,12 +90,14 @@ dataFilesLoader.generateParsedFiles = function(fileList)
     tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Generation of DFL files complete")
 
     if hasExistingGeneratedFiles then
-        for cellDescription, cell in pairs(dataFilesLoader.oldCells) do
-            local isExterior = (cell.data.flags % 2) == 0
-            if isExterior then
-                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
-            else
+        for cellDescription, cell in pairs(dataFilesLoader.oldInteriorCells) do
+            if cell ~= dataFilesLoader.data.Interior[cellDescription] then 
                 dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Interior[cellDescription])
+            end
+        end
+        for cellDescription, cell in pairs(dataFilesLoader.oldExteriorCells) do
+            if cell ~= dataFilesLoader.data.Exterior[cellDescription] then 
+                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
             end
         end
     end
@@ -94,6 +119,13 @@ dataFilesLoader.parseCellEntry = function(entry)
         cellRecord.atmosphere_data = entry.atmosphere_data
         cellRecord.region = entry.region 
         cellRecord.id = entry.id
+
+        if cellRecord.references == nil then cellRecord.references = {} end
+        for _, reference in ipairs(entry.references) do
+            cellRecord.references[reference.refr_index] = reference 
+            local ref = cellRecord.references[reference.refr_index]
+            ref.refr_index = nil
+        end
     else
         tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
         dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
@@ -102,13 +134,13 @@ dataFilesLoader.parseCellEntry = function(entry)
         cellRecord.data = entry.data
         cellRecord.region = entry.region
         cellRecord.id = entry.id
-    end
 
-    if cellRecord.references == nil then cellRecord.references = {} end
-    for _, reference in ipairs(entry.references) do
-        cellRecord.references[reference.refr_index] = reference 
-        local ref = cellRecord.references[reference.refr_index]
-        ref.refr_index = nil
+        if cellRecord.references == nil then cellRecord.references = {} end
+        for _, reference in ipairs(entry.references) do
+            cellRecord.references[reference.refr_index] = reference 
+            local ref = cellRecord.references[reference.refr_index]
+            ref.refr_index = nil
+        end
     end
 end
 
@@ -153,4 +185,6 @@ end
 
 if dataFilesLoader.config.parseOnServerStart == true then
     customEventHooks.registerHandler("OnServerPostInit", dataFilesLoader.init)
+else
+    customEventHooks.registerHandler("OnServerPostInit", dataFilesLoader.loadParsedFiles)
 end
