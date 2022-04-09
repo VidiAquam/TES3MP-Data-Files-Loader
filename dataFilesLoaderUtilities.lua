@@ -5,9 +5,9 @@ dataFilesLoader.updateCellRefs = function(cellDescription, oldCell, newCell)
             tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Updating refnums in cell " .. cellDescription)
 
             for oldRefnum, object in pairs(serverCellInfo.objectData) do -- Get refnum of an object stored in server files
-                if oldRefnum:endswith("-0") and oldCell.references[oldRefnum:trimend("-0")] ~= nil then -- Is it an object in an esm/esp?
+                if oldRefnum:sub(-2, -1) == "-0" and oldCell.references[oldRefnum:sub(1, -3)] ~= nil then -- Is it an object in an esm/esp?
 
-                    local oldRefData = oldCell.references[oldRefnum:trimend("-0")] -- Get ref data from the old cell entry
+                    local oldRefData = oldCell.references[oldRefnum:sub(1, -3)] -- Get ref data from the old cell entry
                     local newRefnum
                     for refnum, ref in ipairs(newCell.references) do
                         if ref.id == oldRefData.id and ref.translation == oldRefData.translation and ref.rotation == oldRefData.rotation then -- Check if object is same w/ different refnum
@@ -33,6 +33,46 @@ dataFilesLoader.updateCellRefs = function(cellDescription, oldCell, newCell)
     end
 end
 
+-- Determines if recordtype is a CELL recordtype
+dataFilesLoader.isCellRecordType = function(recordType)
+    return recordType == "Interior" or recordType == "Exterior"
+end
+
+-- Gets the filename of the recordtype and (if interior or exterior) the id
+dataFilesLoader.getFilename = function(recordType, id)
+    if not tableHelper.containsValue(dataFilesLoader.acceptableRecordTypes, recordType) then 
+        tes3mp.LogMessage(enumerations.log.ERROR, "[DFL] Provided record type is not in the list of acceptable record types.")
+        return nil
+    end
+    return "custom/DFL_output/".. recordType .. "/DFL_" .. recordType .. "_" .. dataFilesLoader.getFilenameID(id) .. ".json"
+end
+
+-- Gets the ID attached to a filename
+dataFilesLoader.getIDFromFilename = function(filename) 
+    -- DFL_<recordtype>_<id>
+    -- Get everything after the second underscore 
+    local recordtype = filename:match("DFL_(%a+)_.+") -- Not necessary but nice to have
+    local id = filename:match("DFL_%a+_(.+)")
+    return dataFilesLoader.getRefId(id)
+end
+
+-- Gets the filename ID from the id
+dataFilesLoader.getFilenameID = function(id)
+    --[[ 
+        TODO: Look at more ways we can change characters (what about '-'', ',', etc.)
+        Must make it reversible under the set deterimed by recordtypes
+        E.g. commas and spaces can't both be underscores in the same recordtype
+    --]] 
+    id = id:gsub(" ", "_")  -- spaces become underscores
+    return id
+end
+
+dataFilesLoader.getRefId = function(filenameID)
+    filenameID = filenameID:gsub("_", " ")  -- All underscores become spaces
+    return filenameID
+end
+
+-- Gets the data of items
 dataFilesLoader.getItemRecord = function(id) 
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
@@ -42,14 +82,27 @@ dataFilesLoader.getItemRecord = function(id)
     end
 end
 
-dataFilesLoader.getRecord = function(id, recordType)
-    if recordType ~= "Cell" then
-        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType].id else return nil end
+-- Gets recordtype data
+local getRecordByType = function(recordType)
+    if dataFilesLoader.config.staticLoading then
+        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType] else return nil end
     else
-        return dataFilesLoader.getCellRecord(id)
+        return dataFilesLoader.dynamicLoadParsedFile(recordType)
     end
 end
 
+-- Gets data on item based off its recordType
+dataFilesLoader.getRecord = function(id, recordType)
+    -- Just the table assoc. with the record type 
+    if id == nil then
+        return getRecordByType(recordType)
+    else
+        -- Get the table assoc. with the record type and indexed by the id
+        return getRecordByType(recordType)[id]
+    end
+end
+
+-- Gets Record based on if it's a cell
 dataFilesLoader.getCellRecord = function(cellDescription) 
     return dataFilesLoader.getRecord(cellDescription, "Interior") or dataFilesLoader.getRecord(cellDescription, "Exterior")
 end
