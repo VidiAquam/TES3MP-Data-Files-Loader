@@ -15,21 +15,21 @@ dataFilesLoader.updateCellRefs = function(cellDescription, oldCell, newCell)
 
                             serverCellInfo.objectData[newRefnum] = serverCellInfo.objectData[oldRefnum] -- Update object data to new refnum
                             serverCellInfo.objectData[oldRefnum] = nil
-                            
+
                             for _, packets in pairs(serverCellInfo.packets) do
                                 if tableHelper.containsValue(packets, oldRefnum, true) then
                                     table.remove(packets,tableHelper.getIndexByValue(packets, oldRefnum))
                                     table.insert(packets, newRefnum)
                                 end
                             end
-                            
+
                             break
                         end
                     end
                 end
             end
-            jsonInterface.save("cell/".. cellDescription .. ".json", serverCellInfo, config.cellKeyOrder) 
-        end 
+            jsonInterface.save("cell/".. cellDescription .. ".json", serverCellInfo, config.cellKeyOrder)
+        end
     end
 end
 
@@ -40,7 +40,7 @@ end
 
 -- Gets the filename of the recordtype and (if interior or exterior) the id
 dataFilesLoader.getFilename = function(recordType, id)
-    if not tableHelper.containsValue(dataFilesLoader.acceptableRecordTypes, recordType) then 
+    if not tableHelper.containsValue(dataFilesLoader.acceptableRecordTypes, recordType) then
         tes3mp.LogMessage(enumerations.log.ERROR, "[DFL] Provided record type is not in the list of acceptable record types.")
         return nil
     end
@@ -48,9 +48,9 @@ dataFilesLoader.getFilename = function(recordType, id)
 end
 
 -- Gets the ID attached to a filename
-dataFilesLoader.getIDFromFilename = function(filename) 
+dataFilesLoader.getIDFromFilename = function(filename)
     -- DFL_<recordtype>_<id>
-    -- Get everything after the second underscore 
+    -- Get everything after the second underscore
     local recordtype = filename:match("DFL_(%a+)_.+") -- Not necessary but nice to have
     local id = filename:match("DFL_%a+_(.+)")
     return dataFilesLoader.getRefId(id)
@@ -58,11 +58,11 @@ end
 
 -- Gets the filename ID from the id
 dataFilesLoader.getFilenameID = function(id)
-    --[[ 
+    --[[
         TODO: Look at more ways we can change characters (what about '-'', ',', etc.)
         Must make it reversible under the set deterimed by recordtypes
         E.g. commas and spaces can't both be underscores in the same recordtype
-    --]] 
+    --]]
     id = id:gsub(" ", "_")  -- spaces become underscores
     return id
 end
@@ -73,7 +73,7 @@ dataFilesLoader.getRefId = function(filenameID)
 end
 
 -- Gets the data of items
-dataFilesLoader.getItemRecord = function(id) 
+dataFilesLoader.getItemRecord = function(id)
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
         if dataFilesLoader.getRecord(id, recordType) ~= nil then
@@ -82,27 +82,22 @@ dataFilesLoader.getItemRecord = function(id)
     end
 end
 
--- Gets recordtype data
-local getRecordByType = function(recordType)
-    if dataFilesLoader.config.staticLoading then
-        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType] else return nil end
-    else
-        return dataFilesLoader.dynamicLoadParsedFile(recordType)
-    end
-end
-
 -- Gets data on item based off its recordType
 dataFilesLoader.getRecord = function(id, recordType)
-    -- Just the table assoc. with the record type 
+    -- Just the table assoc. with the record type
     if id == nil then
-        return getRecordByType(recordType)
+        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType] else return nil end
     else
         -- Get the table assoc. with the record type and indexed by the id
-        return getRecordByType(recordType)[id]
+        if dataFilesLoader.config.staticLoading then
+            if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType][id] else return nil end
+        else
+            return dataFilesLoader.loadFilename(recordType, id)
+        end
     end
 end
 
 -- Gets Record based on if it's a cell
-dataFilesLoader.getCellRecord = function(cellDescription) 
+dataFilesLoader.getCellRecord = function(cellDescription)
     return dataFilesLoader.getRecord(cellDescription, "Interior") or dataFilesLoader.getRecord(cellDescription, "Exterior")
 end
