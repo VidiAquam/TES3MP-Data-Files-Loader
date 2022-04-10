@@ -17,7 +17,8 @@ dataFilesLoader.config = {
     -- Loads them on start up
     staticLoading = true,
     -- The types of records to generate DFL files for
-    recordTypesToRead = dataFilesLoader.config.acceptableRecordTypes
+    recordTypesToRead = dataFilesLoader.acceptableRecordTypes
+    
 }
 
 -- Loads and decodes the file
@@ -54,20 +55,17 @@ dataFilesLoader.addTableEntry = function(recordType, entry, tableID)
         record.atmosphere_data = entry.atmosphere_data
         record.region = entry.region
         record.id = entry.id
+
+        -- update references
+        if record.references == nil then record.references = {} end
+        for refr_index, reference in pairs(entry.references) do
+            record.references[refr_index] = reference
+        end
     else
         record = {} -- Removes unnecessary fields
         record = entry
     end
 
-    -- Wipe out references if it's a cell
-    if recordType == "Interior" or recordType == "Exterior" then
-        if record.references == nil then record.references = {} end
-        for _, reference in ipairs(entry.references) do
-            record.references[reference.refr_index] = reference
-            local ref = record.references[reference.refr_index]
-            ref.refr_index = nil
-        end
-    end
     return record
 end
 
@@ -81,13 +79,31 @@ local normaliseString = function(str)
 end
 
 dataFilesLoader.parseExteriorEntry = function(entry)
-    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])
+    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])    
+    
+    -- Index by refr_index
+    local newRefs = {}
+    if entry.references == nil then entry.references = {} end
+    for _, reference in ipairs(entry.references) do
+        newRefs[reference.refr_index] = reference
+        reference.refr_index = nil
+    end
+    entry.references = newRefs
+
     return cellID, entry
 end
 
 dataFilesLoader.parseInteriorEntry = function(entry)
     entry.id = normaliseString(entry.id)
     local tableID = entry.id
+        
+    -- Index by refr_index
+    local newRefs = {}
+    for _, reference in ipairs(entry.references) do
+        newRefs[reference.refr_index] = reference
+    end 
+    entry.references = newRefs
+
     return tableID, entry
 end
 
@@ -185,18 +201,21 @@ dataFilesLoader.loadParsedFiles = function()
         return
     end
 
+    -- List of recordtypes that require swapping underscores with spaces
+    local recordTypeUsesSpace = {"Interior", "Exterior"}
+
     for _, recordType in pairs(dataFilesLoader.config.recordTypesToRead) do
         dataFilesLoader.data[recordType] = {}
 
-        -- TODO : Go through each file in the directory
         local dir = config.dataPath .. "/custom/DFL_output/" .. recordType .. "/"
         local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
-            local id = dataFilesLoader.getIDFromFilename(filename)
-            dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, id)
+            local fileID = dataFilesLoader.getIDFromFilename(filename)
+            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID       
+            dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, fileID)
         end
     end
-    tes3mp.LogMessage(enumerations.log.INFO, "DFL Files have loaded successfully")
+    tes3mp.LogMessage(enumerations.log.INFO, "DFL files have loaded successfully")
 end
 
 -- Logic for Server Init handler
