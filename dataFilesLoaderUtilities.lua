@@ -53,16 +53,11 @@ dataFilesLoader.getIDFromFilename = function(filename)
     -- Get everything after the second underscore
     local recordtype = filename:match("DFL_(%a+)_.+") -- Not necessary but nice to have
     local id = filename:match("DFL_%a+_(.+)")
-    return dataFilesLoader.getRefId(id)
+    return id
 end
 
 -- Gets the filename ID from the id
 dataFilesLoader.getFilenameID = function(id)
-    --[[
-        TODO: Look at more ways we can change characters (what about '-'', ',', etc.)
-        Must make it reversible under the set deterimed by recordtypes
-        E.g. commas and spaces can't both be underscores in the same recordtype
-    --]]
     id = id:gsub(" ", "_")  -- spaces become underscores
     return id
 end

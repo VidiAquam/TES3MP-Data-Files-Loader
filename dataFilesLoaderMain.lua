@@ -13,11 +13,11 @@ dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
-    parseOnServerStart = false,
+    parseOnServerStart = true,
     -- Loads them on start up
     staticLoading = true,
     -- The types of records to generate DFL files for
-    recordTypesToRead = dataFilesLoader.acceptableRecordTypes
+    recordTypesToRead = dataFilesLoader.config.acceptableRecordTypes
 }
 
 -- Loads and decodes the file
@@ -26,7 +26,7 @@ dataFilesLoader.loadFilename = function(recordType, id)
     if fname == nil then
         return nil
     end
-    if not dataFilesLoader.config.staticLoading then
+    if not dataFilesLoader.config.staticLoading then 
         tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Loading " .. fname)
     end
     return jsonInterface.load(fname)
@@ -75,13 +75,18 @@ dataFilesLoader.isInteriorCell = function(entry)
     return entry.data ~= nil and entry.data.flags ~= nil and (entry.data.flags % 2) == 1
 end
 
+local normaliseString = function(str)
+    str = string.lower(str)
+    return string.gsub(str, '^%s*(.-)%s*$', '%1')
+end
+
 dataFilesLoader.parseExteriorEntry = function(entry)
-    local cellID = entry.data.grid[1] .. ", " .. entry.data.grid[2]
+    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])
     return cellID, entry
 end
 
 dataFilesLoader.parseInteriorEntry = function(entry)
-    entry.id = string.lower(entry.id)
+    entry.id = normaliseString(entry.id)
     local tableID = entry.id
     return tableID, entry
 end
@@ -90,7 +95,7 @@ end
 dataFilesLoader.parseEntry = function(entry)
     local tableID = -1
     if entry.id ~= nil then
-        tableID = string.lower(entry.id)
+        tableID = normaliseString(entry.id)
         entry.id = nil
         entry.type = nil
         entry.flags = nil
