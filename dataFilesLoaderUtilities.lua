@@ -53,7 +53,7 @@ dataFilesLoader.getIDFromFilename = function(filename)
     -- Get everything after the second underscore
     local recordtype = filename:match("DFL_(%a+)_.+") -- Not necessary but nice to have
     local id = filename:match("DFL_%a+_(.+)")
-    return id
+    return id:sub(1, -6)
 end
 
 -- Gets the filename ID from the id
