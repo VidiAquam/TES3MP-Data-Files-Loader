@@ -20,29 +20,35 @@ Once the script is installed, use tes3conv to produce a JSON file of each plugin
 
 The script can be configured by modifying `dataFilesLoader.config` in `dataFilesLoaderMain.lua`. There are currently two settings that can be changed:
 
-`parseOnServerStart` - If this is set to true, the function to generate the output JSON files will be run on each server start. Otherwise it must be run manually by another script. I don't recommend setting this to true.
+* `parseOnServerStart` - If this is set to true, the function to generate the output JSON files will be run on each server start. Otherwise it must be run manually by another script. I don't recommend setting this to true.
 
-`recordTypesToRead` - This is a list of record types for which to generate output JSON files. Not all record types can currently be included, but the majority will be handled properly.
+* `recordTypesToRead` - This is a list of record types for which to generate output JSON files. Not all record types can currently be included, but the majority will be handled properly.
+
+* `staticLoading` - This ensures that the JSON data is loaded into a lua table, making it quicker to access data. Turning this off saves memory, but increases the workload of the server. If you have the memory, make sure this is on.
+
+### Important information for Linux Users
+
+Lua, unfortunately, has issues with memory allocation in Linux, and this will be apparent if you try installing **all** the record types. 
+
+To remedy this, use the library proved here: https://github.com/Neopallium/mmap_lowmem
+
+After installing the shared library, run `export LD_PRELOAD="/usr/lib/libmmap_lowmen.so" lua` before running tes3mp.
 
 ## Usage
-
-This script's data can be accessed through the global table `dataFilesLoader.data`. It is organized by type of record (e.g. `dataFilesLoader.data.Npc`) and then by id (e.g. `dataFilesLoader.data.Npc.fargoth`). The structure of individual records is identical to that of tes3conv output.
 
 Cell records have been divided into Interior and Exterior records due to their number and the size of each cell record. Use either "Interior" or "Exterior" in place of "Cell" when accessing cell records directly.
 
 Individual records can also be accessed by the following functions:
 
-`dataFilesLoader.getCellRecord(cellDescription)` Returns the interior or exterior cell record matching the provided cellDescription, or `nil` if none exists
+* `dataFilesLoader.getItemRecord(id)` Returns the record of the inventory item matching the given id, or `nil` if none exists
 
-`dataFilesLoader.getItemRecord(id)` Returns the record of the inventory item matching the given id, or `nil` if none exists
+* `dataFilesLoader.getRecord(nil, recordType)` Returns the table associated with the recordType, assuming that staticLoading is active.
 
-`dataFilesLoader.getRecord(id, recordType)` Returns the record with the given id and the type of `recordType`, or nil if none exists. This function will also accept "Cell" as recordType, acting the same as `getCellRecord`.
+* `dataFilesLoader.getRecord(id, recordType)` Returns the record with the given id and the type of `recordType`, or nil if none exists. 
 
 ## Contributors
 
-Written by Vidi_Aquam
-
-These scripts use the lua_string library by stein197 found here and included in this repo: https://github.com/stein197/lua-string
+Written by Vidi_Aquam and Oliver Rees
 
 ## License
 

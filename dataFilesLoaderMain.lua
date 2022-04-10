@@ -15,11 +15,9 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = true,
     -- Loads them on start up
-    staticLoading = false,
+    staticLoading = true,
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Activator", "Alchemy", "Apparatus", "Armor", "Bodypart", "Book", "Clothing", "Container", 
-    "Creature", "Door", "Ingredient", "Light", "Lockpick", "MiscItem", "Npc", "PathGrid", "Probe", "Race", "Region",
-    "RepairTool", "Static", "Weapon"}
+    recordTypesToRead = dataFilesLoader.acceptableRecordTypes
 }
 
 -- Loads and decodes the file
@@ -147,7 +145,7 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                     elseif recordtype == "Interior" then
                         entry = dataFilesLoader.addTableEntry("Interior", entry, tableID)
                     end
-                               
+
                     -- Save to JSON
                     local fname = dataFilesLoader.getFilename(recordtype, tableID)
                     if fname ~= nil then
