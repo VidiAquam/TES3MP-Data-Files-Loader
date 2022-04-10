@@ -15,10 +15,9 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = true,
     -- Loads them on start up
-    staticLoading = true,
+    staticLoading = false,
     -- The types of records to generate DFL files for
     recordTypesToRead = dataFilesLoader.acceptableRecordTypes
-    
 }
 
 -- Loads and decodes the file
@@ -45,28 +44,33 @@ dataFilesLoader.generateInputFilenames = function()
 end
 
 dataFilesLoader.addTableEntry = function(recordType, entry, tableID)
-    local record = dataFilesLoader.data[recordType][tableID]
-    if record == nil then record = {} end
+    if  dataFilesLoader.data[recordType][tableID] == nil then dataFilesLoader.data[recordType][tableID] = {} end
 
     -- Add to table
     if recordType == "Interior" then
-        record.data = entry.data
-        record.water_height = entry.water_height
-        record.atmosphere_data = entry.atmosphere_data
-        record.region = entry.region
-        record.id = entry.id
-
-        -- update references
-        if record.references == nil then record.references = {} end
-        for refr_index, reference in pairs(entry.references) do
-            record.references[refr_index] = reference
-        end
+        dataFilesLoader.data[recordType][tableID].data = entry.data
+        dataFilesLoader.data[recordType][tableID].water_height = entry.water_height
+        dataFilesLoader.data[recordType][tableID].atmosphere_data = entry.atmosphere_data
+        dataFilesLoader.data[recordType][tableID].region = entry.region
+        dataFilesLoader.data[recordType][tableID].id = entry.id
+    elseif recordType == "Exterior" then
+        dataFilesLoader.data[recordType][tableID].data = entry.data
+        dataFilesLoader.data[recordType][tableID].region = entry.region
+        dataFilesLoader.data[recordType][tableID].id = entry.id
     else
-        record = {} -- Removes unnecessary fields
-        record = entry
+        dataFilesLoader.data[recordType][tableID] = {} -- Removes unnecessary fields
+        dataFilesLoader.data[recordType][tableID] = entry
     end
 
-    return record
+    -- update references
+    if recordType == "Interior" or recordType == "Exterior" then    
+        if dataFilesLoader.data[recordType][tableID].references == nil then dataFilesLoader.data[recordType][tableID].references = {} end
+        for refr_index, reference in pairs(entry.references) do
+            dataFilesLoader.data[recordType][tableID].references[refr_index] = reference
+        end
+    end
+
+    return dataFilesLoader.data[recordType][tableID]
 end
 
 dataFilesLoader.isInteriorCell = function(entry)
@@ -99,8 +103,10 @@ dataFilesLoader.parseInteriorEntry = function(entry)
         
     -- Index by refr_index
     local newRefs = {}
+    if entry.references == nil then entry.references = {} end
     for _, reference in ipairs(entry.references) do
         newRefs[reference.refr_index] = reference
+        reference.refr_index = nil
     end 
     entry.references = newRefs
 
@@ -138,6 +144,7 @@ dataFilesLoader.generateParsedFiles = function(fileList)
         end
     else
         dataFilesLoader.data["Interior"] = {}
+        dataFilesLoader.data["Exterior"] = {}
     end
 
     -- Could use dataFilesLoader.data[entry.type] ~= nil instead if we could better distinguish between staticLoading
@@ -161,18 +168,19 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                 elseif tableHelper.containsValue(dataFilesLoader.config.recordTypesToRead, entry.type) then
                     tableID, entry = dataFilesLoader.parseEntry(entry)
                 end
+                
                 if tableID ~= -1 then
                     -- Save to table if permissible
                     if dataFilesLoader.config.staticLoading then
                         entry = dataFilesLoader.addTableEntry(recordtype, entry, tableID)
-                    elseif recordtype == "Interior" then
-                        entry = dataFilesLoader.addTableEntry("Interior", entry, tableID)
+                    elseif recordtype == "Interior" or recordtype == "Exterior" then
+                        entry = dataFilesLoader.addTableEntry(recordtype, entry, tableID)
                     end
 
                     -- Save to JSON
                     local fname = dataFilesLoader.getFilename(recordtype, tableID)
                     if fname ~= nil then
-                        tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Saving " .. fname)
+                        tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Saving " .. fname)    -- Comment out log to improve speeds
                         jsonInterface.save(fname, entry)
                     end
                 end
@@ -211,7 +219,7 @@ dataFilesLoader.loadParsedFiles = function()
         local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
             local fileID = dataFilesLoader.getIDFromFilename(filename)
-            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID       
+            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID      
             dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, fileID)
         end
     end
