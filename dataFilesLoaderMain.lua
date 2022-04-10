@@ -76,11 +76,12 @@ dataFilesLoader.isInteriorCell = function(entry)
 end
 
 dataFilesLoader.parseExteriorEntry = function(entry)
-    local cellID = entry.data.grid[1] .. "," .. entry.data.grid[2]
+    local cellID = entry.data.grid[1] .. ", " .. entry.data.grid[2]
     return cellID, entry
 end
 
 dataFilesLoader.parseInteriorEntry = function(entry)
+    entry.id = string.lower(entry.id)
     local tableID = entry.id
     return tableID, entry
 end
@@ -89,7 +90,7 @@ end
 dataFilesLoader.parseEntry = function(entry)
     local tableID = -1
     if entry.id ~= nil then
-        tableID = entry.id
+        tableID = string.lower(entry.id)
         entry.id = nil
         entry.type = nil
         entry.flags = nil
@@ -140,7 +141,6 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                     tableID, entry = dataFilesLoader.parseEntry(entry)
                 end
                 if tableID ~= -1 then
-                    tableID = string.lower(tableID)
                     -- Save to table if permissible
                     if dataFilesLoader.config.staticLoading then
                         entry = dataFilesLoader.addTableEntry(recordtype, entry, tableID)
