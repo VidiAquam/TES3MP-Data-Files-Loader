@@ -140,6 +140,7 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                     tableID, entry = dataFilesLoader.parseEntry(entry)
                 end
                 if tableID ~= -1 then
+                    tableID = string.lower(tableID)
                     -- Save to table if permissible
                     if dataFilesLoader.config.staticLoading then
                         entry = dataFilesLoader.addTableEntry(recordtype, entry, tableID)
