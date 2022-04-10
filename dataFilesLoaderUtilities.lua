@@ -69,6 +69,7 @@ end
 
 -- Gets the data of items
 dataFilesLoader.getItemRecord = function(id)
+    id = id:lower()
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
         if dataFilesLoader.getRecord(id, recordType) ~= nil then
@@ -83,6 +84,7 @@ dataFilesLoader.getRecord = function(id, recordType)
     if id == nil then
         if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType] else return nil end
     else
+        id = id:lower()
         -- Get the table assoc. with the record type and indexed by the id
         if dataFilesLoader.config.staticLoading then
             if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType][id] else return nil end
@@ -94,5 +96,6 @@ end
 
 -- Gets Record based on if it's a cell
 dataFilesLoader.getCellRecord = function(cellDescription)
+    cellDescription = cellDescription:lower()
     return dataFilesLoader.getRecord(cellDescription, "Interior") or dataFilesLoader.getRecord(cellDescription, "Exterior")
 end
