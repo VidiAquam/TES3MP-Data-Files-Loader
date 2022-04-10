@@ -2,7 +2,7 @@ dataFilesLoader = {
     data = {}
 }
 
-dataFilesLoader.acceptableRecordTypes = {"Activator", "Alchemy", "Apparatus", "Armor", "Bodypart", "Book", "Clothing", "Container", 
+dataFilesLoader.acceptableRecordTypes = {"Activator", "Alchemy", "Apparatus", "Armor", "Bodypart", "Book", "Clothing", "Container",
 "Creature", "Door", "Exterior", "Ingredient", "Interior", "Light", "Lockpick", "MiscItem", "Npc", "PathGrid", "Probe", "Race", "Region",
 "RepairTool", "Static", "Weapon"}
 
@@ -13,7 +13,7 @@ dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
-    parseOnServerStart = true,
+    parseOnServerStart = false,
     -- Loads them on start up
     staticLoading = true,
     -- The types of records to generate DFL files for
@@ -21,12 +21,14 @@ dataFilesLoader.config = {
 }
 
 -- Loads and decodes the file
-dataFilesLoader.loadFilename = function(recordType, id) 
+dataFilesLoader.loadFilename = function(recordType, id)
     local fname = dataFilesLoader.getFilename(recordType, id)
     if fname == nil then
         return nil
     end
-    tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Loading " .. fname)
+    if not dataFilesLoader.config.staticLoading then
+        tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Loading " .. fname)
+    end
     return jsonInterface.load(fname)
 end
 
@@ -106,7 +108,7 @@ end
 
 -- Generates Vidi JSON Files based on a list of G7 JSON files
 dataFilesLoader.generateParsedFiles = function(fileList)
-    
+
     -- Init tables based on recordTypes to Read
     if dataFilesLoader.config.staticLoading then
         dataFilesLoader.data = {}
@@ -158,7 +160,7 @@ dataFilesLoader.generateParsedFiles = function(fileList)
             tes3mp.LogMessage(enumerations.log.ERROR, "[DFL] Could not find file \"" .. file .. "\" in folder data/custom/DFL_input")
         end
     end
-    
+
     if not dataFilesLoader.config.staticLoading then dataFilesLoader.data = {} end -- Reset data
 
     tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Generation of DFL files complete")
@@ -172,28 +174,28 @@ end
 
 -- Loads the files into the data table
 dataFilesLoader.loadParsedFiles = function()
-    -- Ensures the function can only continue if staticLoading is called 
+    -- Ensures the function can only continue if staticLoading is called
     if not dataFilesLoader.config.staticLoading then
         tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Can't load files into data table when staticLoading isn't set.")
         return
     end
-    
+
     for _, recordType in pairs(dataFilesLoader.config.recordTypesToRead) do
         dataFilesLoader.data[recordType] = {}
-        
+
         -- TODO : Go through each file in the directory
-        local dir = "custom/DFL_output/" .. recordType .. "/"
-        local filenames = fileHelper.dir(dir)
+        local dir = config.dataPath .. "/custom/DFL_output/" .. recordType .. "/"
+        local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
             local id = dataFilesLoader.getIDFromFilename(filename)
-            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading JSON: " .. id " of " .. recordType)
             dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, id)
         end
     end
+    tes3mp.LogMessage(enumerations.log.INFO, "DFL Files have loaded successfully")
 end
 
 -- Logic for Server Init handler
-customEventHooks.registerHandler("OnServerPostInit", function() 
+customEventHooks.registerHandler("OnServerPostInit", function()
     if dataFilesLoader.config.parseOnServerStart then
         dataFilesLoader.generateOutputFiles()
     elseif dataFilesLoader.config.staticLoading then
