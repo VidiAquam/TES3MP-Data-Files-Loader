@@ -1,38 +1,3 @@
-dataFilesLoader.updateCellRefs = function(cellDescription, oldCell, newCell)
-    if newCell ~= nil and tes3mp.DoesFileExist(config.dataPath .. "/cell/".. cellDescription .. ".json") then
-        serverCellInfo = jsonInterface.load("cell/".. cellDescription .. ".json")
-        if serverCellInfo.lastVisit ~= {} then -- Check for a cell having been reset with Urm's cell reset script; if so, don't bother with it
-            tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Updating refnums in cell " .. cellDescription)
-
-            for oldRefnum, object in pairs(serverCellInfo.objectData) do -- Get refnum of an object stored in server files
-                if oldRefnum:sub(-2, -1) == "-0" and oldCell.references[oldRefnum:sub(1, -3)] ~= nil then -- Is it an object in an esm/esp?
-
-                    local oldRefData = oldCell.references[oldRefnum:sub(1, -3)] -- Get ref data from the old cell entry
-                    local newRefnum
-                    for refnum, ref in ipairs(newCell.references) do
-                        if ref.id == oldRefData.id and ref.translation == oldRefData.translation and ref.rotation == oldRefData.rotation then -- Check if object is same w/ different refnum
-                            newRefnum = refnum .. "-0"
-
-                            serverCellInfo.objectData[newRefnum] = serverCellInfo.objectData[oldRefnum] -- Update object data to new refnum
-                            serverCellInfo.objectData[oldRefnum] = nil
-
-                            for _, packets in pairs(serverCellInfo.packets) do
-                                if tableHelper.containsValue(packets, oldRefnum, true) then
-                                    table.remove(packets,tableHelper.getIndexByValue(packets, oldRefnum))
-                                    table.insert(packets, newRefnum)
-                                end
-                            end
-
-                            break
-                        end
-                    end
-                end
-            end
-            jsonInterface.save("cell/".. cellDescription .. ".json", serverCellInfo, config.cellKeyOrder)
-        end
-    end
-end
-
 -- Determines if recordtype is a CELL recordtype
 dataFilesLoader.isCellRecordType = function(recordType)
     return recordType == "Interior" or recordType == "Exterior"
@@ -44,15 +9,11 @@ dataFilesLoader.getFilename = function(recordType, id)
         tes3mp.LogMessage(enumerations.log.ERROR, "[DFL] Provided record type is not in the list of acceptable record types.")
         return nil
     end
-    return "custom/DFL_output/".. recordType .. "/DFL_" .. recordType .. "_" .. dataFilesLoader.getFilenameID(id) .. ".json"
+    return "custom/DFL_output/".. recordType .. "/" .. dataFilesLoader.getFilenameID(id) .. ".json"
 end
 
 -- Gets the ID attached to a filename
 dataFilesLoader.getIDFromFilename = function(filename)
-    -- DFL_<recordtype>_<id>
-    -- Get everything after the second underscore
-    local recordtype = filename:match("DFL_(%a+)_.+") -- Not necessary but nice to have
-    local id = filename:match("DFL_%a+_(.+)")
     return id:sub(1, -6)
 end
 

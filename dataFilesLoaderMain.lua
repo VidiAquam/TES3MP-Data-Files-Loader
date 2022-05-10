@@ -9,6 +9,10 @@ dataFilesLoader.acceptableRecordTypes = {"Activator", "Alchemy", "Apparatus", "A
 require("custom/DFL/dependencies/fileHelperDFL")
 require("custom/DFL/dataFilesLoaderUtilities")
 
+-- ISSUES:
+-- Windows files are weird with colons
+-- Linux overwrites files but surrounds the filename with quotation marks
+
 dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
@@ -17,7 +21,7 @@ dataFilesLoader.config = {
     -- Loads them on start up
     staticLoading = false,
     -- The types of records to generate DFL files for
-    recordTypesToRead = dataFilesLoader.acceptableRecordTypes
+    recordTypesToRead = {"Exterior", "Npc", "Race"}
 }
 
 -- Loads and decodes the file
@@ -26,7 +30,7 @@ dataFilesLoader.loadFilename = function(recordType, id)
     if fname == nil then
         return nil
     end
-    if not dataFilesLoader.config.staticLoading then 
+    if not dataFilesLoader.config.staticLoading then
         tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Loading " .. fname)
     end
     return jsonInterface.load(fname)
@@ -63,7 +67,7 @@ dataFilesLoader.addTableEntry = function(recordType, entry, tableID)
     end
 
     -- update references
-    if recordType == "Interior" or recordType == "Exterior" then    
+    if recordType == "Interior" or recordType == "Exterior" then
         if dataFilesLoader.data[recordType][tableID].references == nil then dataFilesLoader.data[recordType][tableID].references = {} end
         for refr_index, reference in pairs(entry.references) do
             dataFilesLoader.data[recordType][tableID].references[refr_index] = reference
@@ -83,8 +87,8 @@ local normaliseString = function(str)
 end
 
 dataFilesLoader.parseExteriorEntry = function(entry)
-    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])    
-    
+    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])
+
     -- Index by refr_index
     local newRefs = {}
     if entry.references == nil then entry.references = {} end
@@ -100,14 +104,14 @@ end
 dataFilesLoader.parseInteriorEntry = function(entry)
     entry.id = normaliseString(entry.id)
     local tableID = entry.id
-        
+
     -- Index by refr_index
     local newRefs = {}
     if entry.references == nil then entry.references = {} end
     for _, reference in ipairs(entry.references) do
         newRefs[reference.refr_index] = reference
         reference.refr_index = nil
-    end 
+    end
     entry.references = newRefs
 
     return tableID, entry
@@ -168,7 +172,7 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                 elseif tableHelper.containsValue(dataFilesLoader.config.recordTypesToRead, entry.type) then
                     tableID, entry = dataFilesLoader.parseEntry(entry)
                 end
-                
+
                 if tableID ~= -1 then
                     -- Save to table if permissible
                     if dataFilesLoader.config.staticLoading then
@@ -219,7 +223,7 @@ dataFilesLoader.loadParsedFiles = function()
         local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
             local fileID = dataFilesLoader.getIDFromFilename(filename)
-            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID      
+            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID
             dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, fileID)
         end
     end
