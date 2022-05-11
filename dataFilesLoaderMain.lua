@@ -138,8 +138,8 @@ dataFilesLoader.parseCellEntry = function(entry)
         end
     else
         --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
-        dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
-        cellRecord = dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
+        if dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] == nil then dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {} end
+        local cellRecord = dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]]
 
         cellRecord.data = entry.data
         cellRecord.region = entry.region
