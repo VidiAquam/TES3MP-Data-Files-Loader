@@ -14,7 +14,7 @@ end
 
 -- Gets the ID attached to a filename
 dataFilesLoader.getIDFromFilename = function(filename)
-    return filename:sub(1, -6)
+    return dataFilesLoader.getRefID(filename:sub(1, -6))
 end
 
 -- Gets the filename ID from the id
@@ -23,7 +23,7 @@ dataFilesLoader.getFilenameID = function(id)
     return id
 end
 
-dataFilesLoader.getRefId = function(filenameID)
+dataFilesLoader.getRefID = function(filenameID)
     filenameID = filenameID:gsub("_", " ")  -- All underscores become spaces
     return filenameID
 end
@@ -45,7 +45,6 @@ dataFilesLoader.getRecord = function(id, recordType)
     if id == nil then
         if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType] else return nil end
     else
-        id = id:lower()
         -- Get the table assoc. with the record type and indexed by the id
         if dataFilesLoader.config.staticLoading then
             if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType][id] else return nil end

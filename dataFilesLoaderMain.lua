@@ -17,11 +17,11 @@ dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
-    parseOnServerStart = true,
+    parseOnServerStart = false,
     -- Loads them on start up
-    staticLoading = false,
+    staticLoading = true,
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Exterior", "Npc", "Race"}
+    recordTypesToRead = {"Race", "Bodypart"}
 }
 
 -- Loads and decodes the file
@@ -81,13 +81,8 @@ dataFilesLoader.isInteriorCell = function(entry)
     return entry.data ~= nil and entry.data.flags ~= nil and (entry.data.flags % 2) == 1
 end
 
-local normaliseString = function(str)
-    str = string.lower(str)
-    return string.gsub(str, '^%s*(.-)%s*$', '%1')
-end
-
 dataFilesLoader.parseExteriorEntry = function(entry)
-    local cellID = normaliseString(entry.data.grid[1]) .. ", " .. normaliseString(entry.data.grid[2])
+    local cellID = entry.data.grid[1] .. ", " .. entry.data.grid[2]
 
     -- Index by refr_index
     local newRefs = {}
@@ -102,7 +97,7 @@ dataFilesLoader.parseExteriorEntry = function(entry)
 end
 
 dataFilesLoader.parseInteriorEntry = function(entry)
-    entry.id = normaliseString(entry.id)
+    entry.id = entry.id
     local tableID = entry.id
 
     -- Index by refr_index
@@ -121,7 +116,7 @@ end
 dataFilesLoader.parseEntry = function(entry)
     local tableID = -1
     if entry.id ~= nil then
-        tableID = normaliseString(entry.id)
+        tableID = entry.id
         entry.id = nil
         entry.type = nil
         entry.flags = nil
@@ -222,9 +217,8 @@ dataFilesLoader.loadParsedFiles = function()
         local dir = config.dataPath .. "/custom/DFL_output/" .. recordType .. "/"
         local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
-            local fileID = dataFilesLoader.getIDFromFilename(filename)
-            local id = tableHelper.containsValue(recordTypeUsesSpace, recordType) and dataFilesLoader.getRefId(fileID) or fileID
-            dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, fileID)
+            local id = dataFilesLoader.getIDFromFilename(filename)
+            dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, id)
         end
     end
     tes3mp.LogMessage(enumerations.log.INFO, "DFL files have loaded successfully")
