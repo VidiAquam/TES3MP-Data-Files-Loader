@@ -14,7 +14,7 @@ end
 
 -- Gets the ID attached to a filename
 dataFilesLoader.getIDFromFilename = function(filename)
-    return id:sub(1, -6)
+    return filename:sub(1, -6)
 end
 
 -- Gets the filename ID from the id
