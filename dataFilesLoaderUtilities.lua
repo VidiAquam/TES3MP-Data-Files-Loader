@@ -15,25 +15,25 @@ dataFilesLoader.updateCellRefs = function(cellDescription, oldCell, newCell)
 
                             serverCellInfo.objectData[newRefnum] = serverCellInfo.objectData[oldRefnum] -- Update object data to new refnum
                             serverCellInfo.objectData[oldRefnum] = nil
-                            
+
                             for _, packets in pairs(serverCellInfo.packets) do
                                 if tableHelper.containsValue(packets, oldRefnum, true) then
                                     table.remove(packets,tableHelper.getIndexByValue(packets, oldRefnum))
                                     table.insert(packets, newRefnum)
                                 end
                             end
-                            
+
                             break
                         end
                     end
                 end
             end
-            jsonInterface.save("cell/".. cellDescription .. ".json", serverCellInfo, config.cellKeyOrder) 
-        end 
+            jsonInterface.save("cell/".. cellDescription .. ".json", serverCellInfo, config.cellKeyOrder)
+        end
     end
 end
 
-dataFilesLoader.getItemRecord = function(id) 
+dataFilesLoader.getItemRecord = function(id)
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
         if dataFilesLoader.getRecord(id, recordType) ~= nil then
@@ -43,13 +43,16 @@ dataFilesLoader.getItemRecord = function(id)
 end
 
 dataFilesLoader.getRecord = function(id, recordType)
+    if id == nil then
+        return dataFilesLoader.data[recordType]
+    end
     if recordType ~= "Cell" then
-        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType].id else return nil end
+        if dataFilesLoader.data[recordType] ~= nil then return dataFilesLoader.data[recordType][id] else return nil end
     else
         return dataFilesLoader.getCellRecord(id)
     end
 end
 
-dataFilesLoader.getCellRecord = function(cellDescription) 
+dataFilesLoader.getCellRecord = function(cellDescription)
     return dataFilesLoader.getRecord(cellDescription, "Interior") or dataFilesLoader.getRecord(cellDescription, "Exterior")
 end
