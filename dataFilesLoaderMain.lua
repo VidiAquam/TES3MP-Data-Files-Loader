@@ -17,11 +17,11 @@ dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
-    parseOnServerStart = false,
+    parseOnServerStart = true,
     -- Loads them on start up
-    staticLoading = true,
+    staticLoading = false,
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Race", "Bodypart"}
+    recordTypesToRead = {"Interior", "Exterior"}
 }
 
 -- Loads and decodes the file
@@ -179,6 +179,10 @@ dataFilesLoader.generateParsedFiles = function(fileList)
                     -- Save to JSON
                     local fname = dataFilesLoader.getFilename(recordtype, tableID)
                     if fname ~= nil then
+                        -- Add tableID to entry
+                        entry.tableID = tableID
+
+                        -- Save
                         tes3mp.LogMessage(enumerations.log.INFO, "[DFL] Saving " .. fname)    -- Comment out log to improve speeds
                         jsonInterface.save(fname, entry)
                     end
@@ -209,16 +213,22 @@ dataFilesLoader.loadParsedFiles = function()
     end
 
     -- List of recordtypes that require swapping underscores with spaces
-    local recordTypeUsesSpace = {"Interior", "Exterior"}
-
     for _, recordType in pairs(dataFilesLoader.config.recordTypesToRead) do
         dataFilesLoader.data[recordType] = {}
 
         local dir = config.dataPath .. "/custom/DFL_output/" .. recordType .. "/"
         local filenames = fileHelperDFL.dir(dir)
         for _, filename in pairs(filenames) do
-            local id = dataFilesLoader.getIDFromFilename(filename)
-            dataFilesLoader.data[recordType][id] = dataFilesLoader.loadFilename(recordType, id)
+            -- Get entry and id
+            local entry = jsonInterface.load("/custom/DFL_output/" .. recordType .. "/" .. filename)
+            local id = entry.tableID
+
+            -- Clean tableID
+            entry.tableID = nil
+            tableHelper.cleanNils(entry)
+
+            -- Add to data table
+            dataFilesLoader.data[recordType][id] = entry
         end
     end
     tes3mp.LogMessage(enumerations.log.INFO, "DFL files have loaded successfully")
