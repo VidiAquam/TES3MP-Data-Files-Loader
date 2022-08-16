@@ -39,7 +39,7 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = true, 
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door"},
+    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door"},
 }
 
 dataFilesLoader.init = function() 
