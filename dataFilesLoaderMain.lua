@@ -37,7 +37,7 @@ dataFilesLoader.config = {
     -- Whether or not to regenerate DFL files automatically each time the server starts
     -- Very slow with many mods, especially ones editing cells
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
-    parseOnServerStart = true, 
+    parseOnServerStart = false, 
     -- The types of records to generate DFL files for
     recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door"},
 }
@@ -178,6 +178,8 @@ dataFilesLoader.parseCellEntry = function(entry)
             cellRecord.references[reference.refr_index] = reference 
             local ref = cellRecord.references[reference.refr_index]
             ref.refr_index = nil
+            ref.mast_index = nil
+            ref.temporary = nil
         end
     end
 end
