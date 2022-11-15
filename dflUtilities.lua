@@ -12,6 +12,7 @@ end
 -- @param stream is the tes3mp ``enumerations.log`` int determining log severity
 -- @param msg is the message to be loaded into the stream
 function Log(stream, msg)
+    msg = msg .. "\n"
     if stream >= 3 then io.stderr:write(msg) else io.stdout:write(msg) end
 end
 
