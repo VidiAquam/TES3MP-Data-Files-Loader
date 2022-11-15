@@ -1,5 +1,5 @@
 local rootDir = debug.getinfo(1, "S").source:match("@(.*/)") or ""
-require(rootDir .. "dflUtilities")
+require(rootDir .. "utilities")
 
 local dkjson = require("dkjson")
 local cjson
