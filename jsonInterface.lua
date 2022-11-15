@@ -10,9 +10,9 @@ if cjsonExists then
     cjson.encode_sparse_array(true)
     cjson.encode_invalid_numbers("null")
     cjson.encode_empty_table_as_object(false)
-    cjson.decode_null_as_lightuserdata(false)
+    -- cjson.decode_null_as_lightuserdata(false)
 else
-    log(3,
+    Log(3,
         "Could not find Lua CJSON! The decoding and encoding of JSON files will always use dkjson and be slower as a result.")
 end
 
@@ -44,7 +44,7 @@ end
 function jsonInterface.load(fileName)
 
     if jsonInterface.ioLibrary == nil then
-        log(3, jsonInterface.libraryMissingMessage)
+        Log(3, jsonInterface.libraryMissingMessage)
         return nil
     end
 
@@ -67,7 +67,7 @@ function jsonInterface.load(fileName)
             if status then
                 return decodedContent
             else
-                log(3, "Could not load " .. fileName .. " using Lua CJSON " ..
+                Log(3, "Could not load " .. fileName .. " using Lua CJSON " ..
                     "due to improperly formatted JSON! Error:\n" .. result .. "\n" .. fileName .. " is being read " ..
                     "via the slower dkjson instead.")
             end
@@ -82,7 +82,7 @@ end
 function jsonInterface.writeToFile(fileName, content)
 
     if jsonInterface.ioLibrary == nil then
-        log(3, jsonInterface.libraryMissingMessage)
+        Log(3, jsonInterface.libraryMissingMessage)
         return false
     end
 
