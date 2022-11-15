@@ -52,10 +52,11 @@ local function generateInputFilenames()
 
     for listIndex, pluginEntry in ipairs(jsonDataFileList) do
         for entryIndex, _ in pairs(pluginEntry) do
-            jsonDataFileList[listIndex] = string.lower(entryIndex):sub(0, -4) .. "json"
+            jsonDataFileList[listIndex] = dataFilesLoader.config.dfl_input ..
+                string.lower(entryIndex):sub(0, -4) .. "json"
         end
     end
-    return caseSensitiveFormatting(jsonDataFileList)
+    return CaseSensitiveFormatting(jsonDataFileList)
 end
 
 local function parseInteriorEntry(entry)
@@ -155,19 +156,19 @@ end
 function dataFilesLoader.loadDFLFiles()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
         if recordType ~= "Cell" then
-            log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
+            Log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
             dataFilesLoader.data[recordType] = jsonInterface.load(dataFilesLoader.config.dfl_output ..
                 "DFL_" .. recordType .. ".json")
         else
             if dataFilesLoader.data.Interior == nil then
                 dataFilesLoader.data.Interior = jsonInterface.load(dataFilesLoader.config.dfl_output ..
                     "DFL_Interior.json")
-                log(2, "[DFL] Loading DFL_Interior.json")
+                Log(2, "[DFL] Loading DFL_Interior.json")
             end
             if dataFilesLoader.data.Exterior == nil then
                 dataFilesLoader.data.Exterior = jsonInterface.load(dataFilesLoader.config.dfl_output ..
                     "DFL_Exterior.json")
-                log(2, "[DFL] Loading DFL_Exterior.json")
+                Log(2, "[DFL] Loading DFL_Exterior.json")
             end
         end
     end
@@ -186,7 +187,7 @@ function dataFilesLoader.generateDFLFiles()
     local fileList = generateInputFilenames()
 
     for _, file in ipairs(fileList) do
-        for _, entry in ipairs(jsonInterface.load(dataFilesLoader.config.dfl_input .. file)) do
+        for _, entry in ipairs(jsonInterface.load(file)) do
             if tableHelper.containsValue(dataFilesLoader.config.recordTypesToRead, entry.type) then
                 if entry.type == "Cell" then
                     parseCellEntry(entry)
@@ -196,7 +197,7 @@ function dataFilesLoader.generateDFLFiles()
             end
         end
     end
-    log(2, "[DFL] Generation of DFL files complete")
+    Log(2, "[DFL] Generation of DFL files complete")
 end
 
 if dataFilesLoader.config.parseOnServerStart then
