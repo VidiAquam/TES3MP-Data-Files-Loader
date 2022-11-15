@@ -20,8 +20,12 @@ local jsonInterface = {}
 
 jsonInterface.libraryMissingMessage = "No input/output library selected for JSON interface!"
 
-function jsonInterface.setLibrary(ioLibrary)
-    jsonInterface.ioLibrary = ioLibrary
+function jsonInterface.setLibrary()
+    if IsUNIX then
+        jsonInterface.ioLibrary = io
+    else
+        jsonInterface.ioLibrary = require("io2")
+    end
 end
 
 -- Remove all text from before the actual JSON content starts
@@ -44,8 +48,7 @@ end
 function jsonInterface.load(fileName)
 
     if jsonInterface.ioLibrary == nil then
-        Log(3, jsonInterface.libraryMissingMessage)
-        return nil
+        jsonInterface.setLibrary()
     end
 
     local file = jsonInterface.ioLibrary.open(fileName, 'r')

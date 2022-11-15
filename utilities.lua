@@ -1,4 +1,4 @@
-local isUNIX = os.getenv("HOME") ~= nil
+IsUNIX = os.getenv("HOME") ~= nil
 
 local function path(file)
     return file:match("(.*)/.?") or "" -- assumes that all filepaths follow the UNIX format
@@ -20,7 +20,7 @@ end
 -- @param filepath ist he filepath
 -- @return the list of files found
 function ListFiles(filepath)
-    local list_cmd = isUNIX and ("ls -a " .. filepath) or ("dir " .. filepath)
+    local list_cmd = IsUNIX and ("ls -a " .. filepath) or ("dir " .. filepath)
     local pfile = io.popen(list_cmd)
     return pfile and pfile:lines() or {}
 end
