@@ -43,13 +43,14 @@ dataFilesLoader.config = {
     recordTypesToRead = { "Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static',
         'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container",
         "Region", "Creature", "Npc", "Door" },
-    esp_list = rootDir .. "data/requiredDataFiles.json",
+    required_esps = rootDir .. "data/requiredDataFiles.json",
+    esp_list = rootDir .. "data/esps/",
     dfl_input = rootDir .. "data/DFL_input/",
     dfl_output = rootDir .. "data/DFL_output/"
 }
 
 local function generateInputFilenames()
-    local jsonDataFileList = jsonInterface.load(dataFilesLoader.config.esp_list)
+    local jsonDataFileList = jsonInterface.load(dataFilesLoader.config.required_esps)
 
     for listIndex, pluginEntry in ipairs(jsonDataFileList) do
         for entryIndex, _ in pairs(pluginEntry) do
