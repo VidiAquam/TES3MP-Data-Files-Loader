@@ -5,10 +5,14 @@ require(rootDir .. "tes3conv")
 local jsonInterface = require(rootDir .. "jsonInterface")
 
 
+--- Collects the filenames used as input for the dfl generator
+-- @return a list generator of the filenames used as the input for the DFL
 local function generateInputFilenames()
     return ListFiles(dataFilesLoader.config.dfl_input)
 end
 
+--- Collects the case sensitive ESP files which are required for the server
+-- @return the case sensitive ESP filepaths and names
 local function collectESPs()
     local jsonDataFileList = jsonInterface.load(dataFilesLoader.config.required_esps)
     for listIndex, pluginEntry in ipairs(jsonDataFileList) do
@@ -16,14 +20,17 @@ local function collectESPs()
             jsonDataFileList[listIndex] = dataFilesLoader.config.esp_list .. entryIndex
         end
     end
-    return CaseSensitiveFormatting(jsonDataFileList)
+    return CaseSensitiveFiles(jsonDataFileList)
 end
 
-local function generateInput()
+--- Generates DFL's input files by converting ESP data into JSON
+local function generateDFLInput()
     local esps = collectESPs()
     ParseESPs(esps)
 end
 
+--- Parses data which denote interior cells
+-- @param entry is the unit of data representing an interior cell
 local function parseInteriorEntry(entry)
     if dataFilesLoader.data.Interior[entry.id] == nil then dataFilesLoader.data.Interior[entry.id] = {} end
     local cellRecord = dataFilesLoader.data.Interior[entry.id]
@@ -42,6 +49,8 @@ local function parseInteriorEntry(entry)
     end
 end
 
+--- Parses data which denote exterior cells
+-- @param entry is the unit of data representing an exterior cell
 local function parseExteriorEntry(entry)
     if dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] == nil then
         dataFilesLoader.data.Exterior[entry.data.grid[1] .. ", " .. entry.data.grid[2]] = {}
@@ -62,6 +71,9 @@ local function parseExteriorEntry(entry)
     end
 end
 
+--- Parses data which denotes a cell
+-- Determines whether cell should be parsed as an interior or exterior cell
+-- @param entry is the unit of data representing a cell
 local function parseCellEntry(entry)
     if (entry.data.flags % 2) == 0 then
         parseExteriorEntry(entry)
@@ -70,7 +82,10 @@ local function parseCellEntry(entry)
     end
 end
 
-local function parseMagicEffect(effects)
+--- Updates the effect ids of a list of magical effects to ids used by tes3mp
+-- @param effects is the original json denoting a spell's effects
+-- @return tes3mp readable effect json
+local function parseMagicEffect_tes3mp(effects)
     for _, effect in ipairs(effects) do
         local effectID = SpellEffectReconvertTable[effect.magic_effect]
         if effectID ~= nil then effect.magic_effect = effectID end
@@ -78,7 +93,10 @@ local function parseMagicEffect(effects)
     return effects
 end
 
-local function parseEffectList(effects)
+--- Updates a list of effect ids to ids used by tes3mp
+-- @param effects is the original json denoting a list of effect ids
+-- @return tes3mp readable effect json
+local function parseEffectList_tes3mp(effects)
     local newEffects = {}
     for _, effect in ipairs(effects) do
         local effectID = SpellEffectReconvertTable[effect]
@@ -87,14 +105,16 @@ local function parseEffectList(effects)
     return newEffects
 end
 
+--- Parses a non-cell based entry
+-- @param entry is the json of the non-cell data
 local function parseEntry(entry)
     local entryType = entry.type
     local recordTable = dataFilesLoader.data[entryType]
 
     if entry.effects ~= nil then
-        entry.effects = parseMagicEffect(entry.effects)
+        entry.effects = parseMagicEffect_tes3mp(entry.effects)
     elseif entry.data ~= nil and entry.data.effects ~= nil then
-        entry.data.effects = parseEffectList(entry.data.effects)
+        entry.data.effects = parseEffectList_tes3mp(entry.data.effects)
     elseif entry.id ~= nil then
         if recordTable[entry.id] == nil then recordTable[entry.id] = {} end
         local k = entry.id
@@ -118,6 +138,7 @@ local function parseEntry(entry)
     end
 end
 
+--- Loads a DFL file into lua's memory
 function dataFilesLoader.loadDFLFiles()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
         Log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
@@ -128,6 +149,7 @@ function dataFilesLoader.loadDFLFiles()
     end
 end
 
+--- Initialises the tables for the generator
 local function initDataTable()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
         if dataFilesLoader.data[recordType] == nil then
@@ -136,6 +158,7 @@ local function initDataTable()
     end
 end
 
+-- Saves the DFL files into their appropriate filenames
 local function saveDFLFiles()
     for _, type in ipairs(dataFilesLoader.config.recordTypesToRead) do
         jsonInterface.quicksave(dataFilesLoader.config.dfl_output .. "DFL_" .. type .. ".json",
@@ -144,6 +167,7 @@ local function saveDFLFiles()
     end
 end
 
+--- Generates DFL data into json files
 function dataFilesLoader.generateDFLFiles()
     initDataTable()
 
@@ -163,8 +187,9 @@ function dataFilesLoader.generateDFLFiles()
     Log(2, "[DFL] Generation of DFL files complete")
 end
 
+--------------------- DEBUG ---------------------
 if dataFilesLoader.config.parseOnServerStart then
-    generateInput()
+    generateDFLInput()
     dataFilesLoader.generateDFLFiles()
 end
 dataFilesLoader.loadDFLFiles()

@@ -49,7 +49,7 @@ end
 --- Finds the file's name in the filesystem
 -- @param fileList are the list of files (paths and basenames)
 -- @return the list of filepaths
-function CaseSensitiveFormatting(fileList)
+function CaseSensitiveFiles(fileList)
     for i, file in ipairs(fileList) do
         local filepath = path(file)
         local filename = basename(file)
@@ -58,6 +58,10 @@ function CaseSensitiveFormatting(fileList)
     return fileList
 end
 
+--- Checks if a table contains a value
+-- @param table is the table being checked for containing a value
+-- @param value is the value that is being checked for. Value can be a table, a regex string or any primitive
+-- @return true if the value exists within the table
 function ContainsValue(table, value)
     for _, v in pairs(table) do
         if type(v) == "table" then
