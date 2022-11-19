@@ -120,22 +120,11 @@ end
 
 function dataFilesLoader.loadDFLFiles()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
-        if recordType ~= "Cell" then
-            Log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
-            dataFilesLoader.data[recordType] = jsonInterface.load(dataFilesLoader.config.dfl_output ..
-                "DFL_" .. recordType .. ".json")
-        else
-            if dataFilesLoader.data.Interior == nil then
-                dataFilesLoader.data.Interior = jsonInterface.load(dataFilesLoader.config.dfl_output ..
-                    "DFL_Interior.json")
-                Log(2, "[DFL] Loading DFL_Interior.json")
-            end
-            if dataFilesLoader.data.Exterior == nil then
-                dataFilesLoader.data.Exterior = jsonInterface.load(dataFilesLoader.config.dfl_output ..
-                    "DFL_Exterior.json")
-                Log(2, "[DFL] Loading DFL_Exterior.json")
-            end
-        end
+        Log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
+        dataFilesLoader.data[recordType] =
+        jsonInterface.load(
+            dataFilesLoader.config.dfl_output .. "DFL_" .. recordType .. ".json"
+        )
     end
 end
 
