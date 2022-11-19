@@ -6,7 +6,7 @@ local jsonInterface = require(rootDir .. "jsonInterface")
 
 
 local function generateInputFilenames()
-    -- TODO: Just use dir on the dfl_input
+    return ListFiles(dataFilesLoader.config.dfl_input)
 end
 
 local function collectESPs()
@@ -63,7 +63,7 @@ local function parseExteriorEntry(entry)
 end
 
 local function parseCellEntry(entry)
-    if (entry.data.flags % 2) then
+    if (entry.data.flags % 2) == 0 then
         parseExteriorEntry(entry)
     else
         parseInteriorEntry(entry)
@@ -147,21 +147,30 @@ local function initDataTable()
     end
 end
 
+local function saveDFLFiles()
+    for _, type in ipairs(dataFilesLoader.config.recordTypesToRead) do
+        jsonInterface.quicksave(dataFilesLoader.config.dfl_output .. "DFL_" .. type .. ".json",
+            dataFilesLoader.data[type])
+        Log(2, "[DFL] Generation of " .. type .. " Completed")
+    end
+end
+
 function dataFilesLoader.generateDFLFiles()
     initDataTable()
-    local fileList = generateInputFilenames()
 
-    for _, file in ipairs(fileList) do
-        for _, entry in ipairs(jsonInterface.load(file)) do
+    for file in generateInputFilenames() do
+        for _, entry in ipairs(jsonInterface.load(dataFilesLoader.config.dfl_input .. file)) do
             if ContainsValue(dataFilesLoader.config.recordTypesToRead, entry.type) then
-                if entry.type == "Cell" then
+                parseEntry(entry)
+            elseif entry.type == "Cell" then
+                if ContainsValue(dataFilesLoader.config.recordTypesToRead, "[IE][nx]terior") then -- Ugly regex, but no | regex
                     parseCellEntry(entry)
-                else
-                    parseEntry(entry)
                 end
             end
         end
     end
+
+    saveDFLFiles()
     Log(2, "[DFL] Generation of DFL files complete")
 end
 

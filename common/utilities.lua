@@ -28,7 +28,7 @@ end
 -- @param filepath ist he filepath
 -- @return the list of files found
 function ListFiles(filepath)
-    local list_cmd = IsUNIX and ("ls -a " .. filepath) or ("dir " .. filepath)
+    local list_cmd = IsUNIX and ("ls " .. filepath) or ("dir " .. filepath)
     local pfile = io.popen(list_cmd)
     return pfile and pfile:lines() or {}
 end
@@ -62,6 +62,8 @@ function ContainsValue(table, value)
     for _, v in pairs(table) do
         if type(v) == "table" then
             ContainsValue(v, value)
+        elseif type(v) == "string" and type(value) == "string" then
+            if v:match(value) ~= nil then return true end
         else
             if v == value then return true end
         end
