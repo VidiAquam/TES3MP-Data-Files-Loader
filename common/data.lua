@@ -12,9 +12,9 @@ dataFilesLoader.config = {
         'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Interior", "Exterior",
         "Container", "Region", "Creature", "Npc", "Door" },
     required_esps = rootDir .. "data/requiredDataFiles.json",
-    esp_list = rootDir .. "data/ESP/",
-    dfl_input = rootDir .. "data/DFL_input/",
-    dfl_output = rootDir .. "data/DFL_output/"
+    esp_list = rootDir .. "data/custom/ESP/",
+    dfl_input = rootDir .. "data/custom/DFL_input/",
+    dfl_output = rootDir .. "data/custom/DFL_output/"
 }
 
 
