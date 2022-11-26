@@ -7,8 +7,6 @@ if (dataFilesLoader.config.useMP) then
     rootDir = ("/" .. debug.getinfo(1, "S").source:match("@(.*/)"):sub(2, -1)) or ""
 end
 
-Log(1, rootDir)
-
 -- Shorthand for
 local tes3conv_path = IsUNIX and (rootDir .. "tes3conv/tes3conv") or (rootDir .. "tes3conv/tes3conv.exe")
 local run_cmd = IsUNIX and "" or "start "
