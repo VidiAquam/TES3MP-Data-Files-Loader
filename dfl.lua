@@ -1,14 +1,24 @@
-local rootDir = debug.getinfo(1, "S").source:match("@(.*/)") or ""
+if dataFilesLoader == nil then
+    dataFilesLoader = {
+        config = {
+            rootDir = debug.getinfo(1, "S").source:match("@(.*/)") or "",
+            useMP = false
+        },
+        data = {}
+    }
+end
+
+local rootDir = dataFilesLoader.config.rootDir
 require(rootDir .. "common/utilities")
 require(rootDir .. "common/data")
 require(rootDir .. "tes3conv")
-local jsonInterface = require(rootDir .. "jsonInterface")
-
+local jsonInterface = dataFilesLoader.config.useMP and jsonInterface or require(rootDir .. "jsonInterface")
 
 --- Collects the filenames used as input for the dfl generator
 -- @return a list generator of the filenames used as the input for the DFL
 local function generateInputFilenames()
-    return ListFiles(dataFilesLoader.config.dfl_input)
+    local input_path = dataFilesLoader.config.data_path .. dataFilesLoader.config.dfl_input
+    return ListFiles(input_path)
 end
 
 --- Collects the case sensitive ESP files which are required for the server
@@ -17,7 +27,8 @@ local function collectESPs()
     local jsonDataFileList = jsonInterface.load(dataFilesLoader.config.required_esps)
     for listIndex, pluginEntry in ipairs(jsonDataFileList) do
         for entryIndex, _ in pairs(pluginEntry) do
-            jsonDataFileList[listIndex] = dataFilesLoader.config.esp_list .. entryIndex
+            jsonDataFileList[listIndex] = dataFilesLoader.config.data_path ..
+                dataFilesLoader.config.esp_list .. entryIndex
         end
     end
     return CaseSensitiveFiles(jsonDataFileList)
@@ -141,7 +152,7 @@ end
 --- Loads a DFL file into lua's memory
 function dataFilesLoader.loadDFLFiles()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
-        Log(2, "[DFL] Loading DFL_" .. recordType .. ".json")
+        Log(1, "[DFL] Loading DFL_" .. recordType .. ".json")
         dataFilesLoader.data[recordType] =
         jsonInterface.load(
             dataFilesLoader.config.dfl_output .. "DFL_" .. recordType .. ".json"
@@ -163,13 +174,14 @@ local function saveDFLFiles()
     for _, type in ipairs(dataFilesLoader.config.recordTypesToRead) do
         jsonInterface.quicksave(dataFilesLoader.config.dfl_output .. "DFL_" .. type .. ".json",
             dataFilesLoader.data[type])
-        Log(2, "[DFL] Generation of " .. type .. " Completed")
+        Log(1, "[DFL] Generation of " .. type .. " Completed")
     end
 end
 
 --- Generates DFL data into json files
 function dataFilesLoader.generateDFLFiles()
     initDataTable()
+    generateDFLInput()
 
     for file in generateInputFilenames() do
         for _, entry in ipairs(jsonInterface.load(dataFilesLoader.config.dfl_input .. file)) do
@@ -188,8 +200,8 @@ function dataFilesLoader.generateDFLFiles()
 end
 
 --------------------- DEBUG ---------------------
-if dataFilesLoader.config.parseOnServerStart then
-    generateDFLInput()
-    dataFilesLoader.generateDFLFiles()
-end
-dataFilesLoader.loadDFLFiles()
+-- if dataFilesLoader.config.parseOnServerStart then
+--     generateDFLInput()
+--     dataFilesLoader.generateDFLFiles()
+-- end
+-- dataFilesLoader.loadDFLFiles()

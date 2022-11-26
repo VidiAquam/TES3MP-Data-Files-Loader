@@ -1,22 +1,31 @@
-dataFilesLoader = { data = {} }
+local dataDir = dataFilesLoader.config.useMP and "" or
+    dataFilesLoader.config.rootDir .. "data/"
 
-local rootDir = debug.getinfo(1, "S").source:match("@(.*/)tes3conv/.*") or ""
+--- Gets the path to the data folder
+-- @return the OS path to the data folder
+local function getDataPath()
+    if (dataFilesLoader.config.useMP) then
+        return config.dataPath .. "/"
+    end
+    return dataFilesLoader.config.rootDir .. "data/"
+end
 
 dataFilesLoader.config = {
-    -- Whether or not to regenerate DFL files automatically each time the server starts
-    -- Very slow with many mods, especially ones editing cells
-    -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
+    -- Copy over existing config
+    -- Can be avoided by having this in the dfl.lua folder
+    useMP = dataFilesLoader.config.useMP,
+    rootDir = dataFilesLoader.config.rootDir,
+
     parseOnServerStart = true,
-    -- The types of records to generate DFL files for
     recordTypesToRead = { "Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static',
         'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Interior", "Exterior",
         "Container", "Region", "Creature", "Npc", "Door" },
-    required_esps = rootDir .. "data/requiredDataFiles.json",
-    esp_list = rootDir .. "data/custom/ESP/",
-    dfl_input = rootDir .. "data/custom/DFL_input/",
-    dfl_output = rootDir .. "data/custom/DFL_output/"
+    required_esps = dataDir .. "requiredDataFiles.json",
+    esp_list = dataDir .. "custom/ESP/",
+    dfl_input = dataDir .. "custom/DFL_input/",
+    dfl_output = dataDir .. "custom/DFL_output/",
+    data_path = getDataPath()
 }
-
 
 SpellEffectReconvertTable = { WaterBreathing = 0, SwiftSwim = 1, WaterWalking = 2, Shield = 3, FireShield = 4,
     LightningShield = 5, FrostShield = 6, Burden = 7, Feather = 8, Jump = 9, Levitate = 10, SlowFall = 11, Lock = 12,
