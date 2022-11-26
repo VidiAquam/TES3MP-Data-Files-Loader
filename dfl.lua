@@ -201,7 +201,6 @@ end
 
 --------------------- DEBUG ---------------------
 -- if dataFilesLoader.config.parseOnServerStart then
---     generateDFLInput()
 --     dataFilesLoader.generateDFLFiles()
 -- end
 -- dataFilesLoader.loadDFLFiles()
