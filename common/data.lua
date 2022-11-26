@@ -7,7 +7,7 @@ local function getDataPath()
     if (dataFilesLoader.config.useMP) then
         return config.dataPath .. "/"
     end
-    return dataFilesLoader.config.rootDir .. "data/"
+    return ""
 end
 
 dataFilesLoader.config = {
