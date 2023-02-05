@@ -1,12 +1,10 @@
 ## TES3MP Data Files Loader
 
-This project is a set of scripts for TES3MP 0.8 making use of the tes3conv tool by Greatness7 to allow TES3MP server scripts to have easy access to the data of the plugins used by the clients.
+This project is a set of scripts for TES3MP 0.8+ making use of the tes3conv tool by Greatness7 to allow TES3MP server scripts to have easy access to the data of the plugins used by the clients.
 
 ## Features and Usage
 
 Currently, this script uses a set of plugins converted to JSON by tes3conv to create its own set of JSON files containing the data of configurable record types (e.g. Activator, NPC, Creature) that can then be queried from a global Lua table or via a few included functions.
-
-The script also contains the functionality to automatically update reference numbers in saved cells when its JSON files are regenerated after a change in the mods required by the server. (For a description of the problems that this can mitigate, see here: https://en.uesp.net/wiki/Morrowind_Mod:Doubling.) However, this functionality has not been sufficiently tested and may result in damaged server data. Back up your server/data/cell folder before using!
 
 ## Installation
 

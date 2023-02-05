@@ -82,11 +82,11 @@ dataFilesLoader.generateParsedFiles = function(fileList)
         table.insert(dataFilesLoader.config.recordTypesToRead, "Cell")
     end
 
-    local hasExistingGeneratedFiles = tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Interior.json") and tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Exterior.json")
-    if hasExistingGeneratedFiles then -- Used to update cell refs to new refnums
-        dataFilesLoader.oldInteriorCells = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
-        dataFilesLoader.oldExteriorCells = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
-    end
+    -- local hasExistingGeneratedFiles = tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Interior.json") and tes3mp.DoesFileExist(config.dataPath .. "/custom/DFL_output/DFL_Exterior.json")
+    -- if hasExistingGeneratedFiles then -- Used to update cell refs to new refnums
+    --     dataFilesLoader.oldInteriorCells = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
+    --     dataFilesLoader.oldExteriorCells = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
+    -- end
 
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
         tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading record type " .. recordType)
@@ -125,20 +125,20 @@ dataFilesLoader.generateParsedFiles = function(fileList)
 
     tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Generation of DFL files complete")
 
-    if hasExistingGeneratedFiles then
-        for cellDescription, cell in pairs(dataFilesLoader.oldInteriorCells) do
-            if dataFilesLoader.oldInteriorCells[cellDescription] ~= dataFilesLoader.data.Interior[cellDescription] then 
-                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Interior[cellDescription])
-            end
-        end
-        for cellDescription, cell in pairs(dataFilesLoader.oldExteriorCells) do
-            if dataFilesLoader.oldExteriorCells[cellDescription] ~= dataFilesLoader.data.Exterior[cellDescription] then 
-                dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
-            end
-        end
-        dataFilesLoader.oldInteriorCells = nil
-        dataFilesLoader.oldExteriorCells = nil
-    end
+    -- if hasExistingGeneratedFiles then
+    --     for cellDescription, cell in pairs(dataFilesLoader.oldInteriorCells) do
+    --         if dataFilesLoader.oldInteriorCells[cellDescription] ~= dataFilesLoader.data.Interior[cellDescription] then 
+    --             dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Interior[cellDescription])
+    --         end
+    --     end
+    --     for cellDescription, cell in pairs(dataFilesLoader.oldExteriorCells) do
+    --         if dataFilesLoader.oldExteriorCells[cellDescription] ~= dataFilesLoader.data.Exterior[cellDescription] then 
+    --             dataFilesLoader.updateCellRefs(cellDescription, cell, dataFilesLoader.data.Exterior[cellDescription])
+    --         end
+    --     end
+    --     dataFilesLoader.oldInteriorCells = nil
+    --     dataFilesLoader.oldExteriorCells = nil
+    -- end
 end
 
 dataFilesLoader.parseCellEntry = function(entry)
