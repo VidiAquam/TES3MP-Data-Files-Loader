@@ -2,8 +2,8 @@ dataFilesLoader = {
     data = {}
 }
 
-require("custom/dfl/dependencies/lua_string")
-require("custom/dfl/dataFilesLoaderUtilities")
+require("custom/data-files-loader/dependencies/lua_string")
+require("custom/data-files-loader/dataFilesLoaderUtilities")
 
 local spellEffectReconvertTable = { WaterBreathing = 0, SwiftSwim = 1, WaterWalking = 2, Shield = 3, FireShield = 4, 
     LightningShield = 5, FrostShield = 6, Burden = 7, Feather = 8, Jump = 9, Levitate = 10, SlowFall = 11, Lock = 12, 
