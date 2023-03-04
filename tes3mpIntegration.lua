@@ -1,3 +1,10 @@
+dataFilesLoader = {
+    config = {
+        rootDir = "custom/dfl/",
+        useMP = true
+    },
+    data = {}
+}
 require("custom/dfl/dfl")
 
 customEventHooks.registerHandler("OnServerPostInit", function()

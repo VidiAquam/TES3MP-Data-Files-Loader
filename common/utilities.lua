@@ -8,11 +8,23 @@ local function basename(file)
     return file:match(".*/(.*)$") or file -- assumes that all filepaths follow the UNIX format
 end
 
+local function getLogDetail(stream)
+    local details = {
+        [0] = "SCRIPT",
+        [1] = "INFO",
+        [2] = "WARN",
+        [3] = "ERROR",
+        [4] = "FATAL"
+    }
+    return details[stream]
+end
+
 --- Log a message in the output or error stream
 -- @param stream is the tes3mp ``enumerations.log`` int determining log severity
 -- @param msg is the message to be loaded into the stream
 function Log(stream, msg)
-    msg = msg .. "\n"
+    local detail = getLogDetail(stream)
+    msg = "[" .. detail .. "]: " .. msg .. "\n"
     if stream >= 3 then io.stderr:write(msg) else io.stdout:write(msg) end
 end
 
