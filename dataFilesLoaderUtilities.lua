@@ -47,7 +47,17 @@ dataFilesLoader.getRecord = function(id, recordType)
     if id == nil then
         return dataFilesLoader.data[recordType]
     end
-    if recordType ~= "Cell" then
+    if recordType == nil then
+        for recordType, recordTable in pairs(dataFilesLoader.data) do
+            if dataFilesLoader.data[recordType][id] ~= nil then 
+                return dataFilesLoader.data[recordType][id]
+            end
+            local newId = dataFilesLoader.getCaseInsensitiveKey(id, recordType) 
+            if newId ~= nil then
+                return dataFilesLoader.data[recordType][newId]
+            end
+        end
+    elseif recordType ~= "Cell" then
         if dataFilesLoader.data[recordType] ~= nil then
             if dataFilesLoader.data[recordType][id] ~= nil then 
                 return dataFilesLoader.data[recordType][id]
