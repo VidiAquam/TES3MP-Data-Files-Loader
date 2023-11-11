@@ -199,13 +199,13 @@ dataFilesLoader.parseEntry = function(entry)
 
     if entry.id ~= nil then 
         --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record " .. entry.id)
-
+        local id = string.lower(entry.id) -- TES3MP uses all lowercase ids for non-cells
         local recordTable = dataFilesLoader.data[entryType]
 
-        if recordTable[entry.id] == nil then recordTable[entry.id] = {} end
+        if recordTable[id] == nil then recordTable[id] = {} end
         
-        recordTable[entry.id] = entry
-        local newEntry = recordTable[entry.id]
+        recordTable[id] = entry
+        local newEntry = recordTable[id]
         newEntry.id = nil
         newEntry.type = nil
         newEntry.flags = nil
