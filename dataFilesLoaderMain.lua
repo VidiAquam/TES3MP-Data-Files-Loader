@@ -39,7 +39,7 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = false, 
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchantment", "Birthsign", "Sound", "Class", "Script"},
+    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchantment", "Birthsign", "Sound", "Class", "Script", "MagicEffect"},
 }
 
 dataFilesLoader.init = function() 
@@ -273,8 +273,8 @@ dataFilesLoader.parseEntry = function(entry)
 
             local recordTable = dataFilesLoader.data[entryType]
 
-            recordTable[#dataFilesLoader.data.entryType].type = nil
-            recordTable[#dataFilesLoader.data.entryType].flags = nil
+            recordTable[#dataFilesLoader.data[entryType]].type = nil
+            recordTable[#dataFilesLoader.data[entryType]].flags = nil
         end
     end
 end   
