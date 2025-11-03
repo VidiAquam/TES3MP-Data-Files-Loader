@@ -257,7 +257,7 @@ dataFilesLoader.parseEntry = function(entry)
         newEntry.type = nil
         newEntry.flags = nil
     else
-        if entry.type == "PathGrid" then
+        if entryType == "PathGrid" then
             local recordTable = dataFilesLoader.data[entryType]
             if recordTable[entry.cell] == nil then recordTable[entry.cell] = {} end
 
@@ -266,6 +266,14 @@ dataFilesLoader.parseEntry = function(entry)
             newEntry.cell = nil
             newEntry.type = nil
             newEntry.flags = nil
+        elseif entryType == "MagicEffect" then
+            local recordTable = dataFilesLoader.data[entryType]
+            recordTable[entry.effect_id] = entry
+
+            local newEntry = recordTable[entry.effect_id]
+            newEntry.type = nil
+            newEntry.flags = nil
+            newEntry.effect_id = nil
         else
             -- I'm not sure what other record types lack ids, but this is here for safety
             --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading " .. entryType .. " record ")
