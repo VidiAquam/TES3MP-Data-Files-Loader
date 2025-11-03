@@ -39,14 +39,14 @@ end
 --- that case the counting will start from the end.
 --- @param i number Index at which retrieve a char.
 --- @return string ch Single character at specified index. Nil if the index is larger than length of the string.
-function mt:__index(i)
-	if string[i] then
-		return string[i]
-	end
-	i = i < 0 and #self + i + 1 or i
-	local rs = self:sub(i, i)
-	return #rs > 0 and rs or nil
-end
+-- function mt:__index(i)
+-- 	if string[i] then
+-- 		return string[i]
+-- 	end
+-- 	i = i < 0 and #self + i + 1 or i
+-- 	local rs = self:sub(i, i)
+-- 	return #rs > 0 and rs or nil
+-- end
 
 --- Splits the string by supplied separator. If the `pattern` parameter is set to true then the separator is considered
 --- as a regular expression.

@@ -33,7 +33,9 @@
 --     end
 -- end
 
-dataFilesLoader.getItemRecord = function(id)
+dataFilesLoader.getItemRecord = function(id, recordType)
+    if recordType then return dataFilesLoader.getRecord(id, recordType) end
+
     local recordTypes = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Clothing', 'Book', 'Light', 'Apparatus', "Lockpick", "Probe", "RepairTool"}
     for _, recordType in ipairs(recordTypes) do
         local record = dataFilesLoader.getRecord(id, recordType)

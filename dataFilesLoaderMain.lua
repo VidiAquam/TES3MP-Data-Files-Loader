@@ -39,7 +39,7 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = false, 
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchantment"},
+    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchantment", "Birthsign", "Sound", "Class", "Script"},
 }
 
 dataFilesLoader.init = function() 
@@ -60,19 +60,39 @@ end
 
 dataFilesLoader.loadParsedFiles = function()
     for _, recordType in ipairs(dataFilesLoader.config.recordTypesToRead) do
-       if recordType ~= "Cell" then
+        if recordType ~= "Cell" then
             tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_" .. recordType .. ".json")
             dataFilesLoader.data[recordType] = jsonInterface.load("custom/DFL_output/DFL_" .. recordType .. ".json")  
-       else
+        else
             if dataFilesLoader.data.Interior == nil then
-                dataFilesLoader.data.Interior = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
-                tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_Interior.json")
+                dataFilesLoader.data.Interior = {}
+                local splitCount = 1
+                
+                local loadedChunk = jsonInterface.load("custom/DFL_output/DFL_Interior"..splitCount..".json")
+                
+                while loadedChunk ~= nil do
+                    tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_Interior"..splitCount..".json")
+                    for id, record in pairs(loadedChunk) do
+                        dataFilesLoader.data.Interior[id] = record
+                    end
+                    
+                    splitCount = splitCount + 1
+
+                    loadedChunk = jsonInterface.load("custom/DFL_output/DFL_Interior"..splitCount..".json")
+                    collectgarbage()
+                end
+
+                --dataFilesLoader.data.Interior = jsonInterface.load("custom/DFL_output/DFL_Interior.json")
             end
+
+            collectgarbage()
+
             if dataFilesLoader.data.Exterior == nil then
                 dataFilesLoader.data.Exterior = jsonInterface.load("custom/DFL_output/DFL_Exterior.json")
                 tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Loading DFL_Exterior.json")
-            end 
-       end 
+            end
+        end 
+        collectgarbage()
     end
 end
 
@@ -113,8 +133,32 @@ dataFilesLoader.generateParsedFiles = function(fileList)
         if recordType == "Cell" then
             jsonInterface.quicksave("custom/DFL_output/DFL_Exterior.json", dataFilesLoader.data["Exterior"])
             tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Exterior.json")
-            jsonInterface.quicksave("custom/DFL_output/DFL_Interior.json", dataFilesLoader.data["Interior"])
-            tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Interior.json")
+
+            
+            local lookupTable = {}
+            for id in pairs(dataFilesLoader.data["Interior"]) do
+                lookupTable[#lookupTable+1] = id
+            end
+            local interiorLength = #lookupTable
+            local tempCount = 1
+            local splitCount = 1
+            local tempTable = {}
+            while tempCount <= interiorLength do
+                for i = 1, 1000, 1 do
+                    if lookupTable[tempCount] then
+                        tempTable[lookupTable[tempCount]] = dataFilesLoader.data["Interior"][lookupTable[tempCount]]
+                    end
+                    tempCount = tempCount + 1
+                end
+
+                jsonInterface.quicksave("custom/DFL_output/DFL_Interior"..splitCount..".json", tempTable)
+                tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Interior"..splitCount..".json")
+                tempTable = {}
+                splitCount = splitCount + 1
+            end
+
+            --jsonInterface.quicksave("custom/DFL_output/DFL_Interior.json", dataFilesLoader.data["Interior"])
+            --tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_Interior.json")
         else
             tes3mp.LogMessage(enumerations.log.WARN, "[DFL] Saving custom/DFL_output/DFL_" .. recordType .. ".json")
             jsonInterface.quicksave("custom/DFL_output/DFL_" .. recordType .. ".json", dataFilesLoader.data[recordType])
@@ -142,26 +186,28 @@ dataFilesLoader.generateParsedFiles = function(fileList)
 end
 
 dataFilesLoader.parseCellEntry = function(entry)
-    local isExterior = (entry.data.flags % 2) == 0
+    local isExterior = string.find(entry.data.flags, "IS_INTERIOR") == nil
 
     if dataFilesLoader.data.Interior == nil then dataFilesLoader.data.Interior = {} end
     if dataFilesLoader.data.Exterior == nil then dataFilesLoader.data.Exterior = {} end
 
     if isExterior == false then
         --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading interior Cell record " .. entry.id)
-        if dataFilesLoader.data.Interior[entry.id] == nil then dataFilesLoader.data.Interior[entry.id] = {} end
-        local cellRecord = dataFilesLoader.data.Interior[entry.id]
+        if dataFilesLoader.data.Interior[entry.name] == nil then dataFilesLoader.data.Interior[entry.name] = {} end
+        local cellRecord = dataFilesLoader.data.Interior[entry.name]
 
         cellRecord.data = entry.data
         cellRecord.water_height = entry.water_height
         cellRecord.atmosphere_data = entry.atmosphere_data
         cellRecord.region = entry.region 
-        cellRecord.id = entry.id
+        cellRecord.name = entry.name
 
         if cellRecord.references == nil then cellRecord.references = {} end
         for _, reference in ipairs(entry.references) do
             cellRecord.references[reference.refr_index] = reference 
             local ref = cellRecord.references[reference.refr_index]
+            ref.id = string.lower(ref.id)
+            ref.mast_index = nil
             ref.refr_index = nil
         end
     else
@@ -171,13 +217,14 @@ dataFilesLoader.parseCellEntry = function(entry)
 
         cellRecord.data = entry.data
         cellRecord.region = entry.region
-        cellRecord.id = entry.id
+        cellRecord.name = entry.name
 
         if cellRecord.references == nil then cellRecord.references = {} end
         for _, reference in ipairs(entry.references) do
             cellRecord.references[reference.refr_index] = reference 
             local ref = cellRecord.references[reference.refr_index]
             ref.refr_index = nil
+            ref.id = string.lower(ref.id)
             ref.mast_index = nil
             ref.temporary = nil
         end
