@@ -39,7 +39,7 @@ dataFilesLoader.config = {
     -- If false, dataFilesLoader.init() will need to be called manually the first time and when changes to the data files are made
     parseOnServerStart = false, 
     -- The types of records to generate DFL files for
-    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairTool", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchantment", "Birthsign", "Sound", "Class", "Script", "MagicEffect"},
+    recordTypesToRead = {"Armor", "Weapon", 'MiscItem', 'Ingredient', 'Alchemy', 'Spell', 'Clothing', 'Book', 'Static', 'Probe', 'Light', 'Apparatus', "Lockpick", "RepairItem", "Race", "Activator", "Bodypart", "Cell", "Container", "Region", "Creature", "Npc", "Door", "Enchanting", "Birthsign", "Sound", "Class", "Script", "MagicEffect"},
 }
 
 dataFilesLoader.init = function() 
@@ -204,11 +204,16 @@ dataFilesLoader.parseCellEntry = function(entry)
 
         if cellRecord.references == nil then cellRecord.references = {} end
         for _, reference in ipairs(entry.references) do
-            cellRecord.references[reference.refr_index] = reference 
-            local ref = cellRecord.references[reference.refr_index]
-            ref.id = string.lower(ref.id)
-            ref.mast_index = nil
-            ref.refr_index = nil
+            if not reference.deleted then
+                cellRecord.references[reference.refr_index] = reference 
+                local ref = cellRecord.references[reference.refr_index]
+                ref.id = string.lower(ref.id)
+                ref.mast_index = nil
+                ref.refr_index = nil
+                ref.temporary = nil
+            else
+                cellRecord.references[reference.refr_index] = nil
+            end
         end
     else
         --tes3mp.LogMessage(enumerations.log.VERBOSE, "-Loading exterior Cell record " .. entry.data.grid[1] .. ", " .. entry.data.grid[2])
@@ -221,12 +226,16 @@ dataFilesLoader.parseCellEntry = function(entry)
 
         if cellRecord.references == nil then cellRecord.references = {} end
         for _, reference in ipairs(entry.references) do
-            cellRecord.references[reference.refr_index] = reference 
-            local ref = cellRecord.references[reference.refr_index]
-            ref.refr_index = nil
-            ref.id = string.lower(ref.id)
-            ref.mast_index = nil
-            ref.temporary = nil
+            if not reference.deleted then
+                cellRecord.references[reference.refr_index] = reference 
+                local ref = cellRecord.references[reference.refr_index]
+                ref.refr_index = nil
+                ref.id = string.lower(ref.id)
+                ref.mast_index = nil
+                ref.temporary = nil
+            else
+                cellRecord.references[reference.refr_index] = nil
+            end
         end
     end
 end
